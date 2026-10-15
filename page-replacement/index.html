@@ -1,0 +1,2604 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%23b45309%22%2F%3E%3Crect%20x%3D%229.5%22%20y%3D%229.5%22%20width%3D%2213%22%20height%3D%2213%22%20rx%3D%222.5%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222.4%22%2F%3E%3Cg%20stroke%3D%22%23fff%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M13%209.5V5M19%209.5V5M13%2027v-4.5M19%2027v-4.5M9.5%2013H5M9.5%2019H5M27%2013h-4.5M27%2019h-4.5%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<title>Sustitución de páginas</title>
+<style>
+  :root {
+    --ink: #10151d;
+    --ink-soft: #35404f;
+    --muted: #5f6877;
+    --faint: #6b7484;
+    --line: #e3e7ee;
+    --line-strong: #c6ccd8;
+    --page: #edf0f6;
+    --card: #ffffff;
+
+    --running: #1d4ed8;
+    --running-soft: #e8eefc;
+    --fault: #c0392f;
+    --fault-soft: #fbeae8;
+
+    --marked: #1c2534;
+    --marked-soft: #e3e8f1;
+    --region-fill-alt: #f2f5f9;
+
+    --radius: 11px;
+    --shadow: 0 1px 2px rgba(16, 21, 29, 0.05), 0 1px 8px rgba(16, 21, 29, 0.04);
+    --fast: 160ms;
+  }
+
+  * { box-sizing: border-box; }
+
+  [hidden] { display: none !important; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+    color: var(--ink);
+    background: var(--page);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 10px 14px 12px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 { margin: 0; font-weight: 640; }
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: var(--card);
+    border: 1px solid var(--line-strong);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background-color var(--fast) ease-out, border-color var(--fast) ease-out, color var(--fast) ease-out, transform var(--fast) ease-out;
+  }
+
+  button:hover:not([disabled]) { border-color: var(--faint); }
+  button:active:not([disabled]) { transform: translateY(1px); }
+
+  button:focus-visible, [tabindex]:focus-visible {
+    outline: 3px solid var(--marked);
+    outline-offset: 2px;
+  }
+
+  button[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+  header { display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto; }
+
+  .head-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .head-row .spacer { flex: 1; }
+
+  header > h1 { font-size: 16px; letter-spacing: -0.012em; color: var(--ink-soft); }
+
+  .toggle-label { font-size: 12.5px; color: var(--muted); }
+
+  .switch { display: flex; gap: 5px; flex-wrap: wrap; }
+  .switch button { padding: 4px 12px; font-size: 12.5px; font-weight: 620; }
+  .switch button[aria-pressed="true"] { background: var(--marked); border-color: var(--marked); color: #fff; }
+  .tool-row .switch button { padding: 2px 8px; font-size: 11.5px; }
+
+  .examples { display: flex; align-items: center; gap: 6px 0; flex-wrap: wrap; }
+  .examples .group { display: inline-flex; align-items: center; gap: 6px; }
+
+  .group-cap {
+    font-size: 10.5px;
+    font-weight: 750;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 4px 0 8px;
+  }
+
+  .examples > .group:first-child .group-cap { padding-left: 0; }
+
+  .examples button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 5px 8px;
+    font-size: 12.5px;
+    text-align: left;
+    box-shadow: var(--shadow);
+  }
+
+  .examples button .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: var(--page);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .examples button .tick { width: 9px; font-size: 10px; font-weight: 800; color: var(--muted); visibility: hidden; }
+  .examples button.solved .tick { visibility: visible; }
+  .examples button[aria-current="true"] { background: var(--running); border-color: var(--running); color: #fff; }
+  .examples button[aria-current="true"] .num { background: rgba(0, 0, 0, 0.22); color: #fff; }
+  .examples button[aria-current="true"] .tick { color: #fff; }
+
+  main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .panel > h2 {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--faint);
+    padding: 9px 12px 8px;
+    border-bottom: 1px solid var(--line);
+    flex: 0 0 auto;
+    min-height: 37px;
+  }
+
+  .panel > h2::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--line-strong);
+    flex: 0 0 auto;
+  }
+
+  .panel.board > h2::before, .panel.tlbBoard > h2::before { background: var(--running); }
+  .panel.state > h2::before { background: var(--ink-soft); }
+
+  .panel > h2 .tip { border-bottom-color: var(--line); color: inherit; letter-spacing: inherit; text-transform: inherit; white-space: nowrap; }
+  .panel > h2 .tip:hover { border-bottom-color: var(--faint); }
+
+  .panel > h2 .panel-note {
+    min-width: 0;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 10.5px;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .tool-row {
+    display: flex;
+    align-items: center;
+    gap: 6px 8px;
+    flex-wrap: wrap;
+    margin: -3px 0 -3px auto;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    color: var(--ink);
+  }
+
+  .tool-row .answer {
+    padding: 3px 9px;
+    font-size: 12px;
+    font-weight: 650;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tool-row .answer .key {
+    font-size: 10.5px;
+    font-weight: 750;
+    color: var(--muted);
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    padding: 0 4px;
+    line-height: 1.35;
+  }
+
+  .panel-body {
+    padding: 9px 11px;
+    overflow: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .panel-body.board-body { padding-top: 8px; padding-bottom: 7px; }
+  .board-body { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 22px; }
+
+  .board-scroll { overflow-x: auto; flex: 0 1 auto; min-width: 0; max-width: 100%; padding: 3px 4px 3px 3px; }
+
+  .grid { border-collapse: separate; border-spacing: 4px 3px; margin: -3px -4px; font-variant-numeric: tabular-nums; }
+
+  .grid th, .grid td { padding: 0; }
+
+  .grid .row-label {
+    text-align: right;
+    padding-right: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .grid .row-label.frame { color: var(--ink-soft); }
+
+  .grid .col-index { font-size: 10.5px; font-weight: 650; color: var(--muted); text-align: center; height: 14px; line-height: 1.2; }
+
+  .grid .col-page {
+    min-width: 38px;
+    height: 23px;
+    font-size: 15px;
+    font-weight: 750;
+    text-align: center;
+    color: var(--ink);
+    border-radius: 6px;
+  }
+
+  .grid .col-address { font-size: 10.5px; font-weight: 650; color: var(--ink-soft); text-align: center; white-space: nowrap; height: 14px; line-height: 1.2; }
+
+  .grid .col-head.current { background: var(--marked-soft); }
+  .grid .col-head.skipped { color: var(--muted); text-decoration: line-through; }
+  .grid .col-head.live { box-shadow: inset 0 -3px 0 var(--marked); }
+
+  .grid .initial-head { font-size: 10.5px; font-weight: 700; color: var(--muted); text-align: center; letter-spacing: 0.03em; }
+
+  .cell {
+    min-width: 38px;
+    height: 30px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 6px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 2px 3px;
+    background: var(--card);
+  }
+
+  .cell.empty { border-style: dashed; border-color: var(--line-strong); color: var(--muted); }
+  .cell.future { border-style: dashed; border-color: var(--line); background: transparent; }
+  .cell.skipped { border-color: var(--line); background: var(--region-fill-alt); color: var(--muted); font-size: 12px; }
+  .cell.initial { background: var(--region-fill-alt); }
+  .cell.fresh { border-color: var(--marked); box-shadow: inset 0 0 0 2px var(--marked); }
+  .cell .bits { display: block; font-size: 10px; font-weight: 650; color: var(--ink-soft); letter-spacing: 0.02em; margin-top: 2px; }
+  .cell .ptr { font-size: 9px; color: var(--ink); margin-right: 2px; vertical-align: 2px; }
+  .grid.compact { border-spacing: 4px 2px; margin: -2px -4px; }
+  .grid.compact .cell { height: 20px; font-size: 13.5px; padding: 1px 3px; }
+  .grid.compact .col-page { height: 21px; }
+
+  .cell.live { padding: 0; border: 0; background: transparent; }
+
+  .pick {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 38px;
+    height: 30px;
+    border: 1.5px dashed var(--ink-soft);
+    border-radius: 6px;
+    padding: 2px 3px;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    background: var(--card);
+    color: var(--muted);
+    box-shadow: none;
+  }
+
+  .pick .then { color: var(--muted); }
+  .pick .ghost { display: none; color: var(--ink); }
+  .pick:hover:not([disabled]), .pick:focus-visible { background: var(--marked-soft); border-style: solid; border-color: var(--marked); }
+  .pick:hover .then, .pick:focus-visible .then { display: none; }
+  .pick:hover .ghost, .pick:focus-visible .ghost { display: inline; }
+  .pick .bits { display: block; font-size: 10px; font-weight: 650; color: var(--muted); margin-top: 2px; }
+
+  .mark-cell { height: 17px; line-height: 1.2; min-width: 38px; text-align: center; font-size: 12.5px; font-weight: 750; color: var(--ink-soft); }
+  .mark-cell.fault { color: var(--fault); font-weight: 800; }
+  .mark-cell.small { font-size: 10px; letter-spacing: 0.01em; }
+  .mark-cell.wrong { color: var(--fault); font-size: 14px; }
+  .mark-cell.right { color: var(--ink-soft); font-size: 14px; }
+
+  .grid tr.split > * { padding-top: 4px; }
+
+  .legend { display: flex; flex-direction: column; gap: 5px; flex: 1 1 150px; min-width: 150px; max-width: 250px; padding-top: 4px; }
+  .legend .item { display: flex; align-items: baseline; gap: 7px; font-size: 11px; line-height: 1.3; color: var(--muted); }
+  .legend .item > :first-child { flex: 0 0 auto; min-width: 22px; }
+  .legend .token { font-size: 11px; font-weight: 800; color: var(--ink-soft); white-space: nowrap; }
+  .legend .token.fault { color: var(--fault); }
+  .legend .ring { width: 22px; height: 14px; border-radius: 4px; border: 1.5px solid var(--marked); box-shadow: inset 0 0 0 1.5px var(--marked); align-self: center; }
+
+  .state-body { display: flex; flex-direction: column; gap: 10px; }
+
+  .when { margin: 0 0 -3px; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+
+  .counters { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    padding: 3px 9px;
+  }
+
+  .counter .caption { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 750; color: var(--muted); }
+  .counter .value { font-size: 18px; font-weight: 750; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .counter .pair { display: inline-flex; align-items: center; gap: 5px; }
+  .counter .pair + .pair { margin-left: 5px; }
+  .counter .pair.fresh .value { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .counter.fresh { box-shadow: 0 0 0 2px var(--marked); }
+
+  .sub-title { font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; font-weight: 750; color: var(--faint); margin-bottom: 6px; }
+
+  .frame-list { display: flex; flex-direction: column; gap: 5px; }
+
+  .frame-row { display: grid; grid-template-columns: 58px 38px minmax(0, 1fr); align-items: center; gap: 9px; }
+  .frame-row .who { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
+
+  .frame-row .page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    border: 1.5px solid var(--ink-soft);
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .frame-row .page.free { border-style: dashed; border-color: var(--line-strong); color: var(--muted); font-size: 10.5px; font-weight: 650; }
+  .frame-row .page.fresh { border-color: var(--marked); box-shadow: inset 0 0 0 2px var(--marked); }
+
+  .order { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; }
+  .order .arrow { font-size: 12px; color: var(--muted); }
+  .order .empty { font-size: 12px; color: var(--muted); }
+
+  .chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 46px;
+    border: 1.5px solid var(--ink-soft);
+    border-radius: 6px;
+    padding: 2px 6px 3px;
+  }
+
+  .chip .value { font-size: 15px; font-weight: 750; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .chip .caption { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+  .chip.fresh { border-color: var(--marked); box-shadow: inset 0 0 0 2px var(--marked); }
+
+  .frame-row .info { font-size: 12.5px; color: var(--ink-soft); line-height: 1.3; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+  .frame-row .ptr-tag { font-size: 11px; font-weight: 800; color: var(--ink); white-space: nowrap; }
+
+  .hidden-note { font-size: 12px; color: var(--muted); margin: 0; }
+  .ended { font-size: 11.5px; font-weight: 750; color: var(--fault); border: 1.5px solid var(--fault); background: var(--fault-soft); border-radius: 5px; padding: 2px 8px; }
+
+  footer { flex: 0 0 auto; display: block; min-height: 0; }
+
+  .narration-panel { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+
+  .narration-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 12px 7px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .narration-head .title { font-weight: 660; font-size: 14.5px; }
+  .narration-head .subtitle { font-size: 13px; color: var(--muted); flex: 1; min-width: 160px; }
+
+  .step-unit {
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--page);
+    border-radius: 5px;
+    padding: 2px 7px;
+    white-space: nowrap;
+  }
+
+  .narration-body {
+    padding: 9px 12px 4px;
+    flex: 1 1 auto;
+    min-height: 113px;
+    max-height: 170px;
+    overflow-y: auto;
+  }
+
+  .narration-body.with-extras {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.1fr) minmax(300px, 0.85fr);
+    gap: 6px 18px;
+    align-content: start;
+  }
+
+  .narration-body.with-extras.no-compare { grid-template-columns: minmax(0, 1fr) minmax(280px, 0.7fr); }
+
+  .narration-extras { min-width: 0; min-height: 0; overflow-y: auto; }
+  .narration-main { min-width: 0; }
+
+  .narration-text { font-size: 15.5px; margin: 0; color: var(--ink); }
+  .narration-note { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; }
+  .narration-prompt { font-size: 13.5px; color: var(--ink-soft); margin: 6px 0 0; padding-left: 9px; border-left: 3px solid var(--marked); }
+  .verdict-right { font-weight: 750; }
+  .verdict-wrong { font-weight: 750; color: var(--fault); }
+
+  .takeaway {
+    padding: 7px 11px;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    animation: flash var(--fast) ease-out;
+  }
+
+  .takeaway .tag {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+
+  .takeaway .line { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+
+  .compare { margin: 7px 0 0; overflow-x: auto; }
+  .compare.full { grid-column: 2; grid-row: 1; margin: 0; }
+  .compare table { border-collapse: collapse; font-size: 12.5px; line-height: 1.3; font-variant-numeric: tabular-nums; }
+  .compare th { text-align: left; font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); font-weight: 700; padding: 0 16px 4px 0; }
+  .compare td { padding: 2px 16px 2px 0; vertical-align: top; }
+  .compare tr + tr td { border-top: 1px solid var(--line); }
+  .compare td.label { color: var(--muted); }
+
+  .progress-row { display: flex; align-items: center; gap: 10px; padding: 4px 12px 0; }
+
+  .progress-track { flex: 1; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--running);
+    border-radius: 2px;
+    transition: transform var(--fast) ease-out;
+    transform-origin: left center;
+  }
+
+  .progress { font-size: 12px; line-height: 1.2; color: var(--muted); white-space: nowrap; }
+
+  .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 7px 12px 8px; }
+  .controls .spacer { flex: 1; }
+
+  .controls .big { padding: 7px 16px; font-size: 15px; font-weight: 640; }
+
+  .controls .big.primary { background: var(--running); border-color: var(--running); color: #fff; }
+  .controls .big.primary:hover:not([disabled]) { background: #1a45bd; border-color: #1a45bd; }
+  .controls .big.primary[disabled] { background: var(--running); border-color: var(--running); }
+  .controls .small { padding: 6px 11px; font-size: 13px; }
+
+  .score { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .tip {
+    font: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    border-bottom: 1px dotted var(--running);
+    cursor: help;
+    border-radius: 0;
+  }
+
+  .tip:hover { border-bottom-style: solid; }
+
+  #tooltip {
+    position: fixed;
+    z-index: 20;
+    max-width: 330px;
+    background: var(--ink);
+    color: #fff;
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13px;
+    line-height: 1.42;
+    box-shadow: 0 6px 20px rgba(16, 21, 29, 0.3);
+    display: none;
+  }
+
+  #tooltip.open { display: block; animation: flash var(--fast) ease-out; }
+  #tooltip .tip-title { font-weight: 700; display: block; margin-bottom: 3px; }
+
+  @keyframes flash {
+    from { opacity: 0.35; }
+    to { opacity: 1; }
+  }
+
+  @media (max-width: 1239px) {
+    body { height: auto; overflow: auto; }
+    main { grid-template-columns: 1fr !important; grid-template-rows: none !important; }
+    .panel-body { overflow: visible; }
+    .board-scroll { overflow-x: auto; }
+    .narration-body { overflow: visible; max-height: none; }
+  }
+
+  @media (max-width: 1000px) {
+    body { padding-bottom: calc(122px + env(safe-area-inset-bottom)); }
+    .narration-body.with-extras, .narration-body.with-extras.no-compare { grid-template-columns: 1fr; }
+    .compare.full { grid-column: auto; grid-row: auto; margin: 7px 0 0; }
+    .narration-extras { overflow: visible; }
+    .narration-head { flex-direction: column; align-items: flex-start; gap: 3px; }
+    .panel > h2 { flex-wrap: wrap; }
+    .tool-row { margin: 2px 0 0; width: 100%; }
+
+    .controls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+      background: var(--card);
+      border-top: 1px solid var(--line-strong);
+      box-shadow: 0 -2px 12px rgba(16, 21, 29, 0.08);
+      z-index: 10;
+    }
+
+    .controls .big, .controls .small { width: 100%; }
+    .controls .spacer, .controls .score { display: none; }
+    #playPause { display: none; }
+    #restartExample { display: none; }
+    #prevStep { order: 1; }
+    #nextStep { order: 2; }
+    #firstStep { order: 3; }
+    #lastStep { order: 4; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="pageTitle"></h1>
+  <div class="head-row">
+    <nav class="examples" id="exampleList" aria-label="Ejemplos"></nav>
+    <span class="spacer"></span>
+    <span class="toggle-label" id="modeLabel"></span>
+    <div class="switch" id="modeBar" role="group" aria-labelledby="modeLabel"></div>
+  </div>
+  <div class="head-row" id="choiceRow" hidden>
+    <span class="toggle-label" id="choiceLabel"></span>
+    <div class="switch" id="choiceBar" role="group" aria-labelledby="choiceLabel"></div>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<footer>
+  <section class="panel narration-panel">
+    <div class="narration-head">
+      <span class="title" id="exampleTitle"></span>
+      <span class="subtitle" id="exampleSubtitle"></span>
+      <span class="step-unit" id="stepUnit"></span>
+    </div>
+    <div class="narration-body" id="narrationPanel" aria-live="polite"></div>
+    <div class="progress-row">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <span class="progress" id="progress"></span>
+    </div>
+    <div class="controls">
+      <button type="button" class="small" id="firstStep"></button>
+      <button type="button" class="big" id="prevStep"></button>
+      <button type="button" class="big primary" id="nextStep"></button>
+      <button type="button" class="small" id="lastStep"></button>
+      <button type="button" class="small" id="playPause"></button>
+      <button type="button" class="small" id="restartExample"></button>
+      <span class="spacer"></span>
+      <span class="score" id="score"></span>
+    </div>
+  </section>
+</footer>
+
+<div id="tooltip" role="tooltip"></div>
+<script id="data">
+const UI_TEXT = {
+  pageTitle: "Sustitución de páginas",
+  progress: "paso {current} de {total}",
+  modeLabel: "Modo",
+  modes: { solve: "Resolver", watch: "Ver" },
+  hintsLabel: "Pistas",
+  hints: { show: "Mostrar", hide: "Ocultar" },
+  answerLabel: "Tu respuesta:",
+  panels: {
+    board: "Marcos",
+    tlbBoard: "Marcos y TLB",
+    state: "Estado"
+  },
+  groups: {
+    cuatro: "Los cuatro algoritmos",
+    marcos: "Más marcos",
+    escrituras: "Con escrituras",
+    tlb: "TLB"
+  },
+  firstStep: "Primero",
+  prevStep: "Anterior",
+  nextStep: "Siguiente",
+  lastStep: "Último",
+  play: "Reproducir",
+  pause: "Pausar",
+  restart: "Empezar de nuevo",
+  takeawayTag: "Para llevarse",
+  solvedMark: "✓",
+  solvedTip: "ya lo resolviste",
+  score: "aciertos: {ok} de {total}",
+  and: " y ",
+  board: {
+    indexRow: "Referencia",
+    pageRow: "Página",
+    addressRow: "Dirección",
+    initialColumn: "Inicio",
+    frameRow: "Marco {frame}",
+    tlbRow: "TLB {slot}",
+    faultRow: "Fallo",
+    victimRow: "Sale",
+    diskRow: "A disco",
+    resultRow: "Resultado",
+    youRow: "Tu respuesta",
+    faultMark: "F",
+    invalidMark: "inválida",
+    skippedMark: "—",
+    right: "✓",
+    wrong: "✗",
+    pointer: "▶",
+    bitU: "U{u}",
+    bitUM: "U{u} M{m}",
+    bitM: "M{m}",
+    address: "{address} {mode}",
+    modeShort: { L: "L", E: "E" },
+    pickLabel: "Marco {frame}: la página {page} queda acá",
+    skippedTitle: "Esta referencia no llega a ejecutarse",
+    results: { tlb: "TLB", table: "tabla", fault: "F" },
+    legend: {
+      fault: { token: "F", text: "fallo de página" },
+      victim: { token: "Sale", text: "la página que se reemplaza" },
+      pointer: { token: "▶", text: "adónde apunta el puntero" },
+      u: { token: "U", text: "bit de uso" },
+      m: { token: "M", text: "bit de modificado" },
+      disk: { token: "A disco", text: "la página modificada que se escribe antes de salir" },
+      modes: { token: "L / E", text: "lectura o escritura" },
+      tlb: { token: "TLB", text: "acierto en la TLB: {tlb} acceso a la TLB y {memory} a memoria" },
+      table: { token: "tabla", text: "fallo de TLB con la página en memoria: {tlb} a la TLB y {memory} a memoria" },
+      tlbFault: { token: "F", text: "fallo de página: {tlb} a la TLB, {memory} a memoria y {disk} a disco" },
+      current: { text: "lo que cambió en esta referencia" }
+    }
+  },
+  answers: {
+    invalid: "Dirección inválida",
+    tlb: "Acierto en la TLB",
+    table: "Fallo de TLB, la página está en memoria",
+    fault: "Fallo de página"
+  },
+  state: {
+    initialNote: "Al empezar, antes de la primera referencia",
+    afterNote: "Después de la referencia {n}",
+    faults: "Fallos de página",
+    writes: "Escrituras a disco",
+    accessesTitle: "Accesos",
+    accesses: { tlb: "TLB", memory: "Memoria", disk: "Disco" },
+    framesTitle: "Marcos",
+    lruOrderTitle: "Marcos, del uso más viejo al más nuevo",
+    fifoOrderTitle: "TLB, de la más vieja a la más nueva",
+    lruChip: "en la {n}",
+    fifoChip: "en la {n}",
+    orderArrow: "→",
+    emptyOrder: "todavía ninguna",
+    free: "libre",
+    since: "entró en la referencia {n}",
+    lastRef: "último uso: referencia {n}",
+    lastInstant: "último uso: instante {t}",
+    nextAt: "vuelve en la referencia {n}",
+    nextNever: "no vuelve a usarse",
+    pointerTag: "◀ puntero",
+    bitU: "U = {u}",
+    bitM: "M = {m}",
+    hiddenNote: "Pistas ocultas: el dato con el que decide el algoritmo lo llevás vos.",
+    ended: "Proceso finalizado"
+  },
+  narr: {
+    prefix: "Referencia {n}: ",
+    prefixAddress: "Referencia {n}: {address} es una {modeName} en la página {page}, con [[desplazamiento:desplazamiento]] {offset}. ",
+    modeName: { L: "lectura", E: "escritura" },
+    lastRef: "la referencia {n}",
+    lastInstant: "el instante {t}",
+    hit: "la página {page} ya está en el marco {frame}, así que no hay fallo.",
+    hitWrite: " Como es una escritura, queda con el bit de modificado en 1.",
+    hitFifo: " FIFO no anota nada: un acierto no cambia el orden de llegada.",
+    hitOptimal: " Óptimo no anota nada: lo único que le importa es lo que viene.",
+    hitLru: " Su último uso pasa a ser esta referencia.",
+    hitClock: " Su bit de uso queda en 1 y el puntero no se mueve.",
+    load: "la página {page} no está en memoria: es un [[fallo:fallo de página]]. Todavía hay marcos libres, y va al primero, el {frame}.",
+    loadClock: "la página {page} no está en memoria: es un [[fallo:fallo de página]]. El marco {frame}, donde está el puntero, está libre: va ahí con bit de uso 1, y el puntero pasa al marco {next}.",
+    replace: "la página {page} no está en memoria y no queda ningún marco libre: fallo de página, y hay que sacar a alguna.",
+    fifo: " FIFO saca la que entró primero de las que están: la {victim}, que entró en la referencia {since}.",
+    optimal: " Óptimo mira lo que viene: {uses}. La que más tarda en volver es la {victim}, y sale.",
+    optimalUse: "la {page} vuelve en la referencia {at}",
+    optimalNever: "la {page} no vuelve a usarse",
+    lru: " LRU saca la que se usó hace más tiempo: la {victim}, usada por última vez en {last}.",
+    clockStart: " El puntero está en el marco {start}.",
+    clockClearOne: " El marco {frames} tiene el bit de uso en 1: lo pasa a 0 y avanza.",
+    clockClearMany: " Los marcos {frames} tienen el bit de uso en 1: los pasa a 0 y avanza.",
+    clockClearAll: " Todos los marcos tienen el bit de uso en 1: el puntero da la vuelta entera pasándolos a 0.",
+    clockPick: " El marco {frame} tiene la {victim} con bit de uso 0: esa sale.",
+    clockEnter: " La {page} entra con bit de uso 1 y el puntero pasa al marco {next}.",
+    clockEnterWrite: " La {page} entra con bit de uso 1 y, como es una escritura, con bit de modificado 1. El puntero pasa al marco {next}.",
+    rounds: ["Primera vuelta", "Segunda vuelta", "Tercera vuelta", "Cuarta vuelta"],
+    passNoneClean: " {round}, buscando U = 0 y M = 0 sin tocar nada: ninguno.",
+    passNoneDirty: " {round}, buscando U = 0 y M = 1 y apagando los bits de uso al pasar: ninguno, pero ahora todos tienen U = 0.",
+    passFoundClean: " {round}, buscando U = 0 y M = 0: el marco {frame}, con la {victim}.",
+    passFoundDirty: " {round}, buscando U = 0 y M = 1: el marco {frame}, con la {victim}.",
+    passFoundDirtyCleared: " {round}, buscando U = 0 y M = 1 y apagando al pasar el bit de uso de {cleared}: el marco {frame}, con la {victim}.",
+    clearedOne: "el marco {frames}",
+    clearedMany: "los marcos {frames}",
+    written: " La {victim} estaba modificada: antes de reemplazarla se escribe en disco.",
+    notWritten: " La {victim} no estaba modificada: se reemplaza sin escribir nada en disco.",
+    loadWrite: " Como es una escritura, la {page} entra con el bit de modificado en 1.",
+    invalid: "pero el proceso tiene {pages} páginas, de la 0 a la {lastPage}: esa dirección no es suya. No es un fallo de página sino un error, y el sistema operativo finaliza el proceso. La última referencia nunca llega a ejecutarse.",
+    tlbHit: "la página {page} está en la TLB: se traduce sin leer la tabla de páginas. Suma {tlb} acceso a la TLB y {memory} a memoria, el del dato.",
+    tlbTable: "la página {page} no está en la TLB pero sí en memoria, en el marco {frame}: se lee la tabla de páginas y la entrada se copia a la TLB{tlbOut}. Suma {tlb} acceso a la TLB y {memory} a memoria: la tabla y el dato.",
+    tlbFault: "la página {page} no está ni en la TLB ni en memoria: fallo de página. Se trae de disco al marco {frame}{memOut}, y entra a la TLB{tlbOut}. Suma {tlb} acceso a la TLB, {memory} a memoria —la tabla y el dato— y {disk} a disco.",
+    memOut: ", donde estaba la {victim}, la de uso más viejo",
+    tlbOutFifo: " en lugar de la {old}, la que entró primero",
+    tlbOutInvalidated: " en el lugar de la {victim}, que ya no está en memoria"
+  },
+  feedback: {
+    right: "Bien.",
+    wrongFrame: "No era el marco {given}.",
+    wrongInvalid: "No es una dirección inválida.",
+    wrongFrameOnInvalid: "No va a ningún marco.",
+    wrongTlb: "No era «{given}», sino «{correct}».",
+    prompt: "Referencia {n}: la página {page}. Tocá el marco donde queda —el que ya la tiene si es un acierto, o el que la recibe si es un fallo—, o usá las teclas 1 a {count}.",
+    promptAddress: "Referencia {n}: {address}, una {modeName}. Tocá el marco donde queda su página, o «{invalid}» arriba del tablero si la dirección no es del proceso. También sirven las teclas 1 a {count}.",
+    promptTlb: "Referencia {n}: la página {page}. ¿Qué pasa al buscarla? Elegí arriba del tablero, o usá las teclas 1 a 3."
+  }
+};
+
+const PANEL_TIPS = {
+  board: {
+    title: "Marcos",
+    body: "Una columna por referencia, con la página referenciada arriba. Cada columna muestra cómo quedan los marcos después de esa referencia; abajo, si hubo fallo y qué página salió. Es la misma tabla que se arma a mano."
+  },
+  tlbBoard: {
+    title: "Marcos y TLB",
+    body: "Una columna por referencia. Arriba, los cuatro marcos del proceso; abajo, las cuatro entradas de la TLB; y al final, qué pasó al buscar la página."
+  },
+  state: {
+    title: "Estado",
+    body: "Cómo quedó todo después de la última columna resuelta, que es lo que hay que mirar para decidir la próxima: los contadores y, marco por marco, el dato con el que decide el algoritmo."
+  }
+};
+
+const TOOLTIPS = {
+  fallo: {
+    title: "Fallo de página",
+    body: "También se lo llama page fault. La página referenciada no está en ningún marco: el proceso se bloquea mientras el sistema operativo la trae de disco, y si no queda ningún marco libre, antes tiene que elegir cuál sacar."
+  },
+  asignacionFija: {
+    title: "Asignación fija",
+    body: "Cada proceso tiene una cantidad de marcos que no cambia mientras ejecuta. Acá son cuatro."
+  },
+  alcanceLocal: {
+    title: "Alcance local",
+    body: "Cuando hay que reemplazar, se elige entre las páginas del mismo proceso que tuvo el fallo, nunca entre las de otro."
+  },
+  bitUso: {
+    title: "Bit de uso",
+    body: "Un bit por marco que se pone en 1 cada vez que la página se carga o se referencia. Clock lo usa para saber si la página se usó desde la última vez que pasó el puntero."
+  },
+  bitModificado: {
+    title: "Bit de modificado",
+    body: "Un bit por marco que se pone en 1 cuando se escribe en la página. Si una página modificada sale de memoria, primero hay que escribirla en disco; si no, la copia del disco sigue sirviendo y se descarta sin más."
+  },
+  tlb: {
+    title: "TLB",
+    body: "Una memoria chica y muy rápida que guarda las últimas traducciones de página a marco. Si la página está ahí, no hace falta leer la tabla de páginas, que está en memoria."
+  },
+  belady: {
+    title: "Anomalía de Belady",
+    body: "Que un proceso tenga más fallos de página teniendo más marcos. Le puede pasar a FIFO; a LRU y a Óptimo, no."
+  },
+  localidad: {
+    title: "Localidad",
+    body: "La tendencia de un proceso a referenciar una y otra vez las mismas páginas durante un rato. Es lo que hace que una TLB chica alcance."
+  },
+  desplazamiento: {
+    title: "Desplazamiento",
+    body: "La posición del byte adentro de su página: el resto de dividir la dirección por el tamaño de página. Para elegir el marco no importa; sólo importa la página."
+  }
+};
+
+const FOUR_ALGORITHMS = [0, 1, 7, 2, 3, 2, 7, 1, 0, 3, 0, 2, 3, 1];
+
+const WRITES_REFERENCES = [
+  { address: 100, mode: "L", page: 0, offset: 100 },
+  { address: 122950, mode: "E", page: 15, offset: 70 },
+  { address: 98306, mode: "L", page: 12, offset: 2 },
+  { address: 139264, mode: "E", page: 17, offset: 0 },
+  { address: 122880, mode: "L", page: 15, offset: 0 },
+  { address: 155650, mode: "E", page: 19, offset: 2 },
+  { address: 172100, mode: "L", page: 21, offset: 68 },
+  { address: 100, mode: "L", page: 0, offset: 100 }
+];
+
+const WRITES_INITIAL = {
+  frames: [
+    { frame: "1", page: 14, u: 1, m: 1, instant: 28 },
+    { frame: "3", page: 17, u: 1, m: 0, instant: 3 },
+    { frame: "5", page: 19, u: 1, m: 1, instant: 15 }
+  ],
+  pointer: "8"
+};
+
+const EXAMPLES = [
+  {
+    number: 1,
+    group: "cuatro",
+    algorithm: "fifo",
+    title: "FIFO: sale la que entró primero",
+    short: "FIFO",
+    adds: "Agrega: cómo se llena la tabla de marcos, y el primer criterio para elegir a quién sacar.",
+    subtitle: "8 páginas, 4 marcos con asignación fija y alcance local, la memoria vacía al empezar.",
+    stepUnit: "Un paso = una referencia a memoria",
+    canvas: { columns: "minmax(0, 1fr) minmax(290px, 0.4fr)", panels: ["board", "state"] },
+    hints: true,
+    frames: ["0", "1", "2", "3"],
+    references: FOUR_ALGORITHMS,
+    expect: { faults: 7, victims: [0, 1, 7] },
+    intro: "Un proceso de 8 páginas con [[asignacionFija:asignación fija]] de 4 marcos y [[alcanceLocal:alcance local]], y la memoria vacía. Arriba de cada columna está la página que se referencia, y la columna dice cómo quedan los cuatro marcos después. Cuando hay que sacar una página, FIFO saca la que lleva más tiempo en memoria.",
+    notes: {
+      5: "Es el primer reemplazo: los cuatro fallos de antes fueron para llenar marcos vacíos, y le pasan igual a cualquier algoritmo.",
+      9: "La 1 se usó en la referencia anterior y sale igual: FIFO no mira si una página se usa, sólo cuándo entró."
+    },
+    closing: "FIFO saca la página que entró primero, aunque sea la que más se está usando."
+  },
+  {
+    number: 2,
+    group: "cuatro",
+    algorithm: "optimal",
+    title: "Óptimo: sale la que más tarda en volver",
+    short: "Óptimo",
+    adds: "Agrega: el mínimo de fallos posible, y por qué no se puede implementar.",
+    subtitle: "La misma secuencia y los mismos 4 marcos del ejemplo anterior.",
+    stepUnit: "Un paso = una referencia a memoria",
+    canvas: { columns: "minmax(0, 1fr) minmax(290px, 0.4fr)", panels: ["board", "state"] },
+    hints: true,
+    frames: ["0", "1", "2", "3"],
+    references: FOUR_ALGORITHMS,
+    expect: { faults: 6, victims: [0, 7] },
+    intro: "La misma secuencia y los mismos cuatro marcos. Óptimo saca la página que más tarda en volver a usarse. Para eso tiene que conocer las referencias que todavía no pasaron, así que ningún sistema operativo lo puede implementar: sirve como vara para medir a los demás.",
+    notes: {
+      9: "La 7 no se vuelve a usar nunca: sacarla no le cuesta ningún fallo más adelante."
+    },
+    closing: "Óptimo saca la que más tarda en volver: nadie puede tener menos fallos, y nadie lo puede implementar, porque no conoce el futuro."
+  },
+  {
+    number: 3,
+    group: "cuatro",
+    algorithm: "lru",
+    title: "LRU: sale la que se usó hace más tiempo",
+    short: "LRU",
+    adds: "Agrega: usar el pasado para adivinar el futuro, y que a veces falla.",
+    subtitle: "La misma secuencia y los mismos 4 marcos.",
+    stepUnit: "Un paso = una referencia a memoria",
+    canvas: { columns: "minmax(0, 1fr) minmax(290px, 0.4fr)", panels: ["board", "state"] },
+    hints: true,
+    frames: ["0", "1", "2", "3"],
+    references: FOUR_ALGORITHMS,
+    expect: { faults: 8, victims: [0, 3, 2, 7] },
+    intro: "La misma secuencia. LRU mira para atrás: saca la página que se usó hace más tiempo, con la idea de que lo que no se usó hace rato tampoco se va a usar pronto. En el panel de estado está el último uso de cada una.",
+    notes: {
+      10: "LRU sacó a la 3 en la referencia anterior y ahora vuelve a hacer falta: el pasado no siempre predice lo que viene.",
+      12: "La 7 se usó por última vez en la referencia 7. Óptimo ya la había sacado en la 9, porque sabía que no volvía."
+    },
+    closing: "LRU suele quedar cerca de Óptimo, pero no siempre: con esta secuencia hace {fallos_3} fallos, uno más que FIFO."
+  },
+  {
+    number: 4,
+    group: "cuatro",
+    algorithm: "clock",
+    title: "Clock: una segunda oportunidad",
+    short: "Clock",
+    adds: "Agrega: el bit de uso y el puntero, y la comparación de los cuatro.",
+    subtitle: "La misma secuencia y los mismos 4 marcos. El puntero arranca en el marco 0.",
+    stepUnit: "Un paso = una referencia a memoria",
+    canvas: { columns: "minmax(0, 1fr) minmax(290px, 0.4fr)", panels: ["board", "state"] },
+    hints: false,
+    bits: ["u"],
+    frames: ["0", "1", "2", "3"],
+    references: FOUR_ALGORITHMS,
+    expect: { faults: 7, victims: [0, 1, 7] },
+    intro: "La misma secuencia. Clock le da una segunda oportunidad a lo que se usó: cada marco tiene un [[bitUso:bit de uso]] que se pone en 1 cuando la página se carga o se referencia, y un puntero recorre los marcos en círculo. Si el puntero encuentra un 1, lo pasa a 0 y sigue; si encuentra un 0, saca esa página. El puntero arranca en el marco 0.",
+    notes: {
+      5: "Con todos los bits de uso en 1, Clock termina eligiendo igual que FIFO: la que entró primero."
+    },
+    compare: {
+      headers: ["Algoritmo", "Fallos de página"],
+      rows: [
+        ["FIFO", "{fallos_1}"],
+        ["Óptimo", "{fallos_2}"],
+        ["LRU", "{fallos_3}"],
+        ["Clock", "{fallos_4}"]
+      ]
+    },
+    closing: "Clock aproxima LRU con un bit por marco y un puntero: es barato, y le da una segunda oportunidad a lo que se usó."
+  },
+  {
+    number: 5,
+    group: "marcos",
+    algorithm: "fifo",
+    title: "Más marcos, más fallos",
+    short: "Belady",
+    adds: "Agrega: con FIFO, darle más marcos a un proceso puede empeorarlo.",
+    subtitle: "FIFO sobre la secuencia 1 2 3 4 1 2 5 1 2 3 4 5, con 3 o con 4 marcos.",
+    stepUnit: "Un paso = una referencia a memoria",
+    canvas: { columns: "minmax(0, 1fr) minmax(290px, 0.4fr)", panels: ["board", "state"] },
+    hints: true,
+    variantLabel: "Cantidad de marcos",
+    references: [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5],
+    variants: [
+      {
+        variantLabel: "3 marcos",
+        frames: ["0", "1", "2"],
+        expect: { faults: 9, victims: [1, 2, 3, 4, 1, 2] },
+        intro: "FIFO otra vez, sobre una secuencia nueva y con 3 marcos. Contá los fallos; después mirá la misma secuencia con 4.",
+        notes: {
+          12: "Nueve fallos con 3 marcos. Lo razonable sería esperar menos con 4: cambiá a 4 marcos arriba."
+        }
+      },
+      {
+        variantLabel: "4 marcos",
+        frames: ["0", "1", "2", "3"],
+        expect: { faults: 10, victims: [1, 2, 3, 4, 5, 1] },
+        intro: "La misma secuencia, con un marco más. Con 4 marcos entran las cuatro primeras páginas sin que salga ninguna.",
+        notes: {
+          7: "Acá empieza la diferencia: con 3 marcos la 5 sacaba a la 4, y las dos referencias que siguen eran aciertos. Con 4 marcos saca a la 1, que se pide justo después.",
+          12: "Diez fallos con 4 marcos, contra nueve con 3. Es la [[belady:anomalía de Belady]]."
+        }
+      }
+    ],
+    compare: {
+      headers: ["", "3 marcos", "4 marcos"],
+      rows: [["Fallos de página", "{fallos_5_1}", "{fallos_5_2}"]]
+    },
+    closing: "Con FIFO, más marcos no garantizan menos fallos: es la anomalía de Belady. A LRU y a Óptimo no les pasa."
+  },
+  {
+    number: 6,
+    group: "escrituras",
+    algorithm: "lru",
+    title: "LRU con páginas modificadas",
+    short: "LRU con escrituras",
+    adds: "Agrega: direcciones en vez de páginas, el bit de modificado y la escritura a disco.",
+    subtitle: "Direcciones de 32 bits, páginas de 8 KiB, 4 marcos con alcance local, y tres páginas ya cargadas.",
+    stepUnit: "Un paso = una referencia a memoria",
+    canvas: { columns: "minmax(0, 1fr) minmax(290px, 0.4fr)", panels: ["board", "state"] },
+    hints: true,
+    bits: ["m"],
+    invalidOption: true,
+    frames: ["1", "3", "5", "8"],
+    pageSize: 8192,
+    processPages: 20,
+    initial: WRITES_INITIAL,
+    references: WRITES_REFERENCES,
+    expect: { faults: 5, writes: 2, victims: [17, 19, 14, 0] },
+    intro: "Paginación bajo demanda, con direcciones de 32 bits y páginas de 8 KiB. El proceso ocupa 159 KiB, así que tiene 20 páginas —de la 0 a la 19—, y tiene asignación fija de 4 marcos con alcance local. Ya hay tres páginas cargadas, con su [[bitModificado:bit de modificado]] y el instante de su última referencia; el marco 8 está libre. La página de una dirección es el cociente de dividirla por 8192, y el resto es el desplazamiento.",
+    notes: {
+      3: "Es el primer reemplazo que cuesta una escritura: la 19 tenía datos que el disco todavía no tiene.",
+      6: "La 19 había salido en la referencia 3 y ahora hace falta otra vez, para escribir."
+    },
+    closing: "Una página modificada no se puede descartar sin más: antes de reemplazarla hay que escribirla en disco."
+  },
+  {
+    number: 7,
+    group: "escrituras",
+    algorithm: "clockModified",
+    title: "Clock modificado",
+    short: "Clock modificado",
+    adds: "Agrega: preferir sacar páginas que no hay que escribir, y la comparación con LRU.",
+    subtitle: "El mismo proceso y las mismas referencias del ejemplo anterior. El puntero arranca en el marco 8.",
+    stepUnit: "Un paso = una referencia a memoria",
+    canvas: { columns: "minmax(0, 1fr) minmax(290px, 0.4fr)", panels: ["board", "state"] },
+    hints: false,
+    bits: ["u", "m"],
+    invalidOption: true,
+    frames: ["1", "3", "5", "8"],
+    pageSize: 8192,
+    processPages: 20,
+    initial: WRITES_INITIAL,
+    references: WRITES_REFERENCES,
+    expect: { faults: 4, writes: 1, victims: [17, 0, 14] },
+    intro: "El mismo proceso y las mismas referencias. Clock modificado mira dos bits por marco, el de uso y el de modificado, y busca en vueltas. Primero, desde el puntero, un marco con U = 0 y M = 0, sin tocar nada. Si no hay, uno con U = 0 y M = 1, y mientras busca va pasando a 0 los bits de uso. Si tampoco hay, vuelve a empezar. El puntero arranca en el marco 8, que está libre.",
+    notes: {
+      6: "La 19 sigue en memoria. Con LRU, en este mismo punto, ya había salido en la referencia 3 y acá era un fallo."
+    },
+    compare: {
+      headers: ["", "LRU", "Clock modificado"],
+      rows: [
+        ["Fallos de página", "{fallos_6}", "{fallos_7}"],
+        ["Escrituras a disco", "{escrituras_6}", "{escrituras_7}"]
+      ]
+    },
+    closing: "Con esta secuencia rinde mejor Clock modificado: menos fallos de página y menos escrituras a disco, que es lo que más cuesta de un fallo."
+  },
+  {
+    number: 8,
+    group: "tlb",
+    algorithm: "tlb",
+    title: "Cuándo sirve la TLB",
+    short: "TLB",
+    adds: "Agrega: contar accesos a la TLB, a memoria y a disco, y la localidad.",
+    subtitle: "4 marcos por proceso con LRU, y una TLB de 4 entradas con FIFO.",
+    stepUnit: "Un paso = una referencia a memoria",
+    canvas: { columns: "minmax(0, 1fr) minmax(290px, 0.4fr)", panels: ["tlbBoard", "state"] },
+    hints: true,
+    variantLabel: "Proceso",
+    frames: ["0", "1", "2", "3"],
+    tlbSize: 4,
+    costs: {
+      tlb: { tlb: 1, memory: 1, disk: 0 },
+      table: { tlb: 1, memory: 2, disk: 0 },
+      fault: { tlb: 1, memory: 2, disk: 1 }
+    },
+    variants: [
+      {
+        variantLabel: "P1",
+        references: [10, 11, 0, 3, 4, 11, 0, 3, 4, 11, 0, 3, 4],
+        expect: { faults: 5, tlb: 13, memory: 18, disk: 5, victims: [10] },
+        intro: "Cuatro marcos por proceso con LRU, y una [[tlb:TLB]] de 4 entradas que se reemplaza con FIFO. Cada referencia pasa primero por la TLB; si no está, se lee la tabla de páginas en memoria; si tampoco está en memoria, hay que ir a disco. P1 repite una y otra vez las mismas páginas.",
+        notes: {
+          6: "Desde acá, todas las páginas que se referencian ya están en la TLB: cada referencia cuesta un acceso a la TLB y uno a memoria."
+        }
+      },
+      {
+        variantLabel: "P2",
+        references: [10, 11, 12, 13, 14, 15, 16, 17, 18],
+        expect: { faults: 9, tlb: 9, memory: 18, disk: 9, victims: [10, 11, 12, 13, 14] },
+        intro: "La misma configuración, con un proceso que nunca repite una página.",
+        notes: {
+          5: "Cada página se usa una sola vez. La TLB guarda traducciones que nadie vuelve a pedir."
+        }
+      }
+    ],
+    compare: {
+      headers: ["Accesos", "P1", "P2"],
+      rows: [
+        ["A la TLB", "{tlb_8_1}", "{tlb_8_2}"],
+        ["A memoria", "{memoria_8_1}", "{memoria_8_2}"],
+        ["A disco", "{disco_8_1}", "{disco_8_2}"]
+      ]
+    },
+    closing: "La TLB sirve si las referencias se repiten. Sin [[localidad:localidad]], no ahorra nada."
+  }
+];
+</script>
+
+<script id="engine">
+const USED_TIPS = {};
+const REFERENCE_ORDER_BASE = 1000000;
+const CLOCK_ALGORITHMS = { clock: true, clockModified: true };
+const FAULT_KINDS = { load: true, replace: true, fault: true };
+const ALGORITHMS = { fifo: true, optimal: true, lru: true, clock: true, clockModified: true, tlb: true };
+
+function fill(template, values) {
+  return String(template).replace(/\{(\w+)\}/g, function (whole, key) {
+    return values[key] === undefined ? whole : String(values[key]);
+  });
+}
+
+function joinList(items) {
+  if (items.length <= 1) return items.join("");
+  return items.slice(0, -1).join(", ") + UI_TEXT.and + items[items.length - 1];
+}
+
+function unresolved(text) {
+  return /\{\w+\}/.test(String(text));
+}
+
+function unbalanced(text) {
+  const stars = String(text).split("*").length - 1;
+  const opens = String(text).split("[[").length - 1;
+  const closes = String(text).split("]]").length - 1;
+  return stars % 2 !== 0 || opens !== closes;
+}
+
+function collectTipKeys(text, into) {
+  const pattern = /\[\[(\w+):/g;
+  let match = pattern.exec(text);
+  while (match) {
+    into[match[1]] = true;
+    match = pattern.exec(text);
+  }
+}
+
+function copyState(state) {
+  return JSON.parse(JSON.stringify(state));
+}
+
+function isClock(example) {
+  return Boolean(CLOCK_ALGORITHMS[example.algorithm]);
+}
+
+function normalizeReference(example, raw, problems, n) {
+  if (typeof raw === "number") return { page: raw };
+  const page = Math.floor(raw.address / example.pageSize);
+  const offset = raw.address % example.pageSize;
+  if (page !== raw.page) problems.push("la referencia " + n + " declara la página " + raw.page + " y la dirección da " + page);
+  if (offset !== raw.offset) problems.push("la referencia " + n + " declara el desplazamiento " + raw.offset + " y la dirección da " + offset);
+  return { page: page, offset: offset, address: raw.address, mode: raw.mode };
+}
+
+function touch(frame, n) {
+  frame.order = REFERENCE_ORDER_BASE + n;
+  frame.lastText = fill(UI_TEXT.state.lastRef, { n: n });
+  frame.lastNarr = fill(UI_TEXT.narr.lastRef, { n: n });
+}
+
+function initialState(example, problems) {
+  const frames = example.frames.map(function (label) {
+    return { label: label, page: null, u: 0, m: 0, order: null, lastText: null, lastNarr: null, since: null };
+  });
+  const initial = example.initial || { frames: [] };
+  initial.frames.forEach(function (item) {
+    const position = example.frames.indexOf(item.frame);
+    if (position === -1) { problems.push("el estado inicial usa el marco " + item.frame + ", que no existe"); return; }
+    const frame = frames[position];
+    frame.page = item.page;
+    frame.u = item.u || 0;
+    frame.m = item.m || 0;
+    frame.order = item.instant;
+    frame.lastText = fill(UI_TEXT.state.lastInstant, { t: item.instant });
+    frame.lastNarr = fill(UI_TEXT.narr.lastInstant, { t: item.instant });
+  });
+  let pointer = 0;
+  if (initial.pointer !== undefined) {
+    pointer = example.frames.indexOf(initial.pointer);
+    if (pointer === -1) { problems.push("el puntero inicial apunta a un marco que no existe"); pointer = 0; }
+  }
+  const tlb = example.tlbSize ? Array.apply(null, Array(example.tlbSize)).map(function () { return null; }) : null;
+  return { frames: frames, pointer: pointer, tlb: tlb, counters: { faults: 0, writes: 0, tlb: 0, memory: 0, disk: 0 }, terminated: false };
+}
+
+function nextUseOf(references, page, after) {
+  for (let index = after; index < references.length; index += 1) {
+    if (references[index].page === page) return index + 1;
+  }
+  return null;
+}
+
+function fifoVictim(frames) {
+  let best = 0;
+  frames.forEach(function (frame, index) { if (frame.since < frames[best].since) best = index; });
+  return { index: best };
+}
+
+function optimalVictim(frames, references, n) {
+  let best = 0;
+  let bestUse = -1;
+  const uses = frames.map(function (frame, index) {
+    const at = nextUseOf(references, frame.page, n);
+    const distance = at === null ? Infinity : at;
+    if (distance > bestUse) { bestUse = distance; best = index; }
+    return { page: frame.page, at: at };
+  });
+  return { index: best, uses: uses };
+}
+
+function lruVictim(frames) {
+  let best = 0;
+  frames.forEach(function (frame, index) { if (frame.order < frames[best].order) best = index; });
+  return { index: best };
+}
+
+function clockVictim(frames, pointer) {
+  const cleared = [];
+  let at = pointer;
+  while (frames[at].u === 1) {
+    frames[at].u = 0;
+    cleared.push(at);
+    at = (at + 1) % frames.length;
+  }
+  return { index: at, start: pointer, cleared: cleared };
+}
+
+function clockModifiedVictim(frames, pointer) {
+  const passes = [];
+  for (let round = 0; round < 4; round += 1) {
+    const dirty = round % 2 === 1;
+    const cleared = [];
+    for (let step = 0; step < frames.length; step += 1) {
+      const index = (pointer + step) % frames.length;
+      const frame = frames[index];
+      if (frame.u === 0 && frame.m === (dirty ? 1 : 0)) {
+        passes.push({ dirty: dirty, found: index, cleared: cleared });
+        return { index: index, start: pointer, passes: passes };
+      }
+      if (dirty && frame.u === 1) { frame.u = 0; cleared.push(index); }
+    }
+    passes.push({ dirty: dirty, found: null, cleared: cleared });
+  }
+  return { index: pointer, start: pointer, passes: passes };
+}
+
+function freeFrame(example, state) {
+  const frames = state.frames;
+  if (!isClock(example)) return frames.findIndex(function (frame) { return frame.page === null; });
+  for (let step = 0; step < frames.length; step += 1) {
+    const index = (state.pointer + step) % frames.length;
+    if (frames[index].page === null) return index;
+  }
+  return -1;
+}
+
+function chooseVictim(example, state, references, n) {
+  if (example.algorithm === "fifo") return fifoVictim(state.frames);
+  if (example.algorithm === "optimal") return optimalVictim(state.frames, references, n);
+  if (example.algorithm === "lru" || example.algorithm === "tlb") return lruVictim(state.frames);
+  if (example.algorithm === "clock") return clockVictim(state.frames, state.pointer);
+  return clockModifiedVictim(state.frames, state.pointer);
+}
+
+function stepFrames(example, state, references, n, problems) {
+  const next = copyState(state);
+  const reference = references[n - 1];
+  const record = { n: n, page: reference.page, offset: reference.offset, address: reference.address, mode: reference.mode, write: reference.mode === "E" };
+  if (example.processPages !== undefined && reference.page >= example.processPages) {
+    record.kind = "invalid";
+    next.terminated = true;
+    return { record: record, state: next };
+  }
+  const frames = next.frames;
+  const at = frames.findIndex(function (frame) { return frame.page === reference.page; });
+  if (at !== -1) {
+    record.kind = "hit";
+    record.frame = at;
+    frames[at].u = 1;
+    if (record.write) frames[at].m = 1;
+    touch(frames[at], n);
+    record.pointer = next.pointer;
+    return { record: record, state: next };
+  }
+  next.counters.faults += 1;
+  const free = freeFrame(example, next);
+  if (free !== -1) {
+    record.kind = "load";
+    record.frame = free;
+    if (isClock(example) && free !== next.pointer) problems.push("en la referencia " + n + " el marco libre no es el del puntero");
+  } else {
+    const choice = chooseVictim(example, next, references, n);
+    const victim = frames[choice.index];
+    record.kind = "replace";
+    record.frame = choice.index;
+    record.victim = victim.page;
+    record.victimSince = victim.since;
+    record.victimLast = victim.lastNarr;
+    record.uses = choice.uses;
+    record.cleared = choice.cleared;
+    record.passes = choice.passes;
+    record.start = choice.start;
+    record.written = victim.m === 1;
+    if (record.written) next.counters.writes += 1;
+  }
+  const target = frames[record.frame];
+  target.page = reference.page;
+  target.u = 1;
+  target.m = record.write ? 1 : 0;
+  target.since = n;
+  touch(target, n);
+  if (isClock(example)) next.pointer = (record.frame + 1) % frames.length;
+  record.pointer = next.pointer;
+  return { record: record, state: next };
+}
+
+function insertIntoTlb(state, page, n, record) {
+  let slot = state.tlb.findIndex(function (entry) { return entry === null; });
+  if (slot === -1) {
+    slot = 0;
+    state.tlb.forEach(function (entry, index) { if (entry.since < state.tlb[slot].since) slot = index; });
+    record.tlbOld = state.tlb[slot].page;
+  }
+  state.tlb[slot] = { page: page, since: n };
+  record.slot = slot;
+}
+
+function addCosts(counters, cost) {
+  counters.tlb += cost.tlb;
+  counters.memory += cost.memory;
+  counters.disk += cost.disk;
+}
+
+function stepTlb(example, state, references, n) {
+  const next = copyState(state);
+  const page = references[n - 1].page;
+  const record = { n: n, page: page };
+  const frames = next.frames;
+  const slot = next.tlb.findIndex(function (entry) { return entry !== null && entry.page === page; });
+  const at = frames.findIndex(function (frame) { return frame.page === page; });
+  if (slot !== -1) {
+    record.kind = "tlb";
+    record.frame = at;
+    record.slot = slot;
+    touch(frames[at], n);
+  } else if (at !== -1) {
+    record.kind = "table";
+    record.frame = at;
+    touch(frames[at], n);
+    insertIntoTlb(next, page, n, record);
+  } else {
+    record.kind = "fault";
+    next.counters.faults += 1;
+    let target = frames.findIndex(function (frame) { return frame.page === null; });
+    if (target === -1) {
+      target = lruVictim(frames).index;
+      record.victim = frames[target].page;
+      const stale = next.tlb.findIndex(function (entry) { return entry !== null && entry.page === record.victim; });
+      if (stale !== -1) { next.tlb[stale] = null; record.invalidated = record.victim; }
+    }
+    record.frame = target;
+    frames[target].page = page;
+    frames[target].since = n;
+    touch(frames[target], n);
+    insertIntoTlb(next, page, n, record);
+  }
+  addCosts(next.counters, example.costs[record.kind]);
+  return { record: record, state: next };
+}
+
+function describeClock(record, example) {
+  const narr = UI_TEXT.narr;
+  const labels = example.frames;
+  let text = fill(narr.clockStart, { start: labels[record.start] });
+  if (record.cleared.length > 0) {
+    const list = joinList(record.cleared.map(function (index) { return labels[index]; }));
+    const template = record.cleared.length === labels.length ? narr.clockClearAll : record.cleared.length === 1 ? narr.clockClearOne : narr.clockClearMany;
+    text += fill(template, { frames: list });
+  }
+  text += fill(narr.clockPick, { frame: labels[record.frame], victim: record.victim });
+  return text;
+}
+
+function describeClockModified(record, example) {
+  const narr = UI_TEXT.narr;
+  const labels = example.frames;
+  let text = fill(narr.clockStart, { start: labels[record.start] });
+  record.passes.forEach(function (pass, round) {
+    const name = narr.rounds[round];
+    if (pass.found === null) {
+      text += fill(pass.dirty ? narr.passNoneDirty : narr.passNoneClean, { round: name });
+      return;
+    }
+    const values = { round: name, frame: labels[pass.found], victim: record.victim };
+    if (!pass.dirty) { text += fill(narr.passFoundClean, values); return; }
+    if (pass.cleared.length === 0) { text += fill(narr.passFoundDirty, values); return; }
+    const list = joinList(pass.cleared.map(function (index) { return labels[index]; }));
+    values.cleared = fill(pass.cleared.length === 1 ? narr.clearedOne : narr.clearedMany, { frames: list });
+    text += fill(narr.passFoundDirtyCleared, values);
+  });
+  return text;
+}
+
+function describeReplacement(record, example) {
+  const narr = UI_TEXT.narr;
+  if (example.algorithm === "fifo") return fill(narr.fifo, { victim: record.victim, since: record.victimSince });
+  if (example.algorithm === "optimal") {
+    const uses = joinList(record.uses.map(function (use) {
+      return use.at === null ? fill(narr.optimalNever, { page: use.page }) : fill(narr.optimalUse, { page: use.page, at: use.at });
+    }));
+    return fill(narr.optimal, { uses: uses, victim: record.victim });
+  }
+  if (example.algorithm === "lru") return fill(narr.lru, { victim: record.victim, last: record.victimLast });
+  if (example.algorithm === "clock") return describeClock(record, example);
+  return describeClockModified(record, example);
+}
+
+function describeHitSuffix(record, example) {
+  const narr = UI_TEXT.narr;
+  let text = "";
+  if (example.algorithm === "fifo") text += narr.hitFifo;
+  if (example.algorithm === "optimal") text += narr.hitOptimal;
+  if (example.algorithm === "lru") text += narr.hitLru;
+  if (isClock(example)) text += narr.hitClock;
+  if (record.write) text += narr.hitWrite;
+  return text;
+}
+
+function describeTlb(record, example) {
+  const narr = UI_TEXT.narr;
+  const cost = example.costs[record.kind];
+  const values = { page: record.page, frame: example.frames[record.frame], tlb: cost.tlb, memory: cost.memory, disk: cost.disk };
+  values.tlbOut = record.invalidated !== undefined
+    ? fill(narr.tlbOutInvalidated, { victim: record.invalidated })
+    : record.tlbOld !== undefined ? fill(narr.tlbOutFifo, { old: record.tlbOld }) : "";
+  values.memOut = record.victim !== undefined ? fill(narr.memOut, { victim: record.victim }) : "";
+  if (record.kind === "tlb") return fill(narr.tlbHit, values);
+  if (record.kind === "table") return fill(narr.tlbTable, values);
+  return fill(narr.tlbFault, values);
+}
+
+function capitalizeAfterStop(prefix, body) {
+  if (!/\.\s*$/.test(prefix)) return prefix + body;
+  return prefix + body.charAt(0).toUpperCase() + body.slice(1);
+}
+
+function describeRecord(record, example) {
+  const prefix = record.address !== undefined
+    ? fill(UI_TEXT.narr.prefixAddress, { n: record.n, address: record.address, modeName: UI_TEXT.narr.modeName[record.mode], page: record.page, offset: record.offset })
+    : fill(UI_TEXT.narr.prefix, { n: record.n });
+  return capitalizeAfterStop(prefix, describeBody(record, example));
+}
+
+function describeBody(record, example) {
+  const narr = UI_TEXT.narr;
+  const labels = example.frames;
+  if (example.algorithm === "tlb") return describeTlb(record, example);
+  if (record.kind === "invalid") {
+    return fill(narr.invalid, { pages: example.processPages, lastPage: example.processPages - 1 });
+  }
+  if (record.kind === "hit") return fill(narr.hit, { page: record.page, frame: labels[record.frame] }) + describeHitSuffix(record, example);
+  if (record.kind === "load") {
+    const body = isClock(example)
+      ? fill(narr.loadClock, { page: record.page, frame: labels[record.frame], next: labels[record.pointer] })
+      : fill(narr.load, { page: record.page, frame: labels[record.frame] });
+    return body + (record.write ? fill(narr.loadWrite, { page: record.page }) : "");
+  }
+  let text = fill(narr.replace, { page: record.page }) + describeReplacement(record, example);
+  if (example.bits && example.bits.indexOf("m") !== -1) text += fill(record.written ? narr.written : narr.notWritten, { victim: record.victim });
+  if (isClock(example)) return text + fill(record.write ? narr.clockEnterWrite : narr.clockEnter, { page: record.page, next: labels[record.pointer] });
+  if (record.write) text += fill(narr.loadWrite, { page: record.page });
+  return text;
+}
+
+function correctAnswer(record, example) {
+  if (example.algorithm === "tlb") return record.kind;
+  if (record.kind === "invalid") return "invalid";
+  return String(record.frame);
+}
+
+function simulate(example, problems) {
+  const references = example.references.map(function (raw, index) { return normalizeReference(example, raw, problems, index + 1); });
+  const states = [initialState(example, problems)];
+  const records = [];
+  for (let n = 1; n <= references.length; n += 1) {
+    const before = states[states.length - 1];
+    if (before.terminated) break;
+    const result = example.algorithm === "tlb"
+      ? stepTlb(example, before, references, n)
+      : stepFrames(example, before, references, n, problems);
+    records.push(result.record);
+    states.push(result.state);
+  }
+  return { references: references, records: records, states: states };
+}
+
+function verifyExpect(example, simulation, problems) {
+  const expect = example.expect || {};
+  const final = simulation.states[simulation.states.length - 1].counters;
+  if (expect.faults === undefined) problems.push("no declara cuántos fallos espera");
+  if (expect.faults !== undefined && final.faults !== expect.faults) problems.push("espera " + expect.faults + " fallos y la simulación da " + final.faults);
+  if (expect.writes !== undefined && final.writes !== expect.writes) problems.push("espera " + expect.writes + " escrituras y la simulación da " + final.writes);
+  ["tlb", "memory", "disk"].forEach(function (key) {
+    if (expect[key] !== undefined && final[key] !== expect[key]) problems.push("espera " + expect[key] + " accesos de tipo " + key + " y la simulación da " + final[key]);
+  });
+  const victims = simulation.records.filter(function (record) { return record.victim !== undefined; }).map(function (record) { return record.victim; });
+  if (expect.victims && expect.victims.join(",") !== victims.join(",")) problems.push("espera que salgan " + expect.victims.join(", ") + " y la simulación saca " + victims.join(", "));
+}
+
+function verifyStructure(example, problems) {
+  if (!ALGORITHMS[example.algorithm]) problems.push("usa el algoritmo " + example.algorithm + ", que no existe");
+  if (!example.closing) problems.push("no tiene frase de cierre");
+  if (!example.stepUnit) problems.push("no declara la unidad del paso");
+  if (!example.intro) problems.push("no tiene presentación");
+  if (!example.frames || example.frames.length === 0) problems.push("no declara marcos");
+  if (example.frames && example.frames.length > 9) problems.push("tiene más de 9 marcos y las teclas no alcanzan");
+  example.canvas.panels.forEach(function (id) {
+    if (!UI_TEXT.panels[id]) problems.push("usa el panel " + id + ", que no tiene nombre");
+    if (!PANEL_TIPS[id]) problems.push("usa el panel " + id + ", que no tiene globito");
+  });
+  if (example.algorithm === "tlb" && !example.costs) problems.push("cuenta accesos y no declara cuánto cuesta cada caso");
+  if (example.invalidOption && example.processPages === undefined) problems.push("ofrece dirección inválida y no dice cuántas páginas tiene el proceso");
+  Object.keys(example.notes || {}).forEach(function (key) {
+    if (Number(key) < 1 || Number(key) > example.references.length) problems.push("tiene una nota para la referencia " + key + ", que no existe");
+  });
+}
+
+function textPieces(example, built) {
+  const pieces = [{ where: "presentación", text: example.intro }];
+  Object.keys(example.notes || {}).forEach(function (key) { pieces.push({ where: "nota de la referencia " + key, text: example.notes[key] }); });
+  built.narrations.forEach(function (text, index) { pieces.push({ where: "narración de la referencia " + (index + 1), text: text }); });
+  return pieces;
+}
+
+function verifyPieces(pieces, problems) {
+  pieces.forEach(function (piece) {
+    if (unresolved(piece.text)) problems.push("quedó un dato sin completar en la " + piece.where);
+    if (unbalanced(piece.text)) problems.push("quedó una marca sin cerrar en la " + piece.where);
+    const keys = {};
+    collectTipKeys(piece.text, keys);
+    Object.keys(keys).forEach(function (key) {
+      if (!TOOLTIPS[key]) problems.push("la " + piece.where + " pide el globito " + key + ", que no existe");
+      USED_TIPS[key] = true;
+    });
+  });
+}
+
+function buildVariant(example, label) {
+  const problems = [];
+  verifyStructure(example, problems);
+  const simulation = simulate(example, problems);
+  verifyExpect(example, simulation, problems);
+  const narrations = simulation.records.map(function (record) { return describeRecord(record, example); });
+  const built = {
+    label: label,
+    example: example,
+    references: simulation.references,
+    records: simulation.records,
+    states: simulation.states,
+    narrations: narrations,
+    executed: simulation.records.length,
+    answers: simulation.records.map(function (record) { return correctAnswer(record, example); }),
+    problems: problems
+  };
+  verifyPieces(textPieces(example, built), problems);
+  built.problems = problems.map(function (problem) { return label ? label + ": " + problem : problem; });
+  return built;
+}
+
+function buildExample(example) {
+  if (!example.variants) {
+    const built = buildVariant(example, null);
+    return { example: example, variants: [built], problems: built.problems.slice() };
+  }
+  const built = example.variants.map(function (variant) {
+    const merged = Object.assign({}, example, variant);
+    delete merged.variants;
+    return buildVariant(merged, variant.variantLabel);
+  });
+  const problems = [];
+  built.forEach(function (one) { one.problems.forEach(function (problem) { problems.push(problem); }); });
+  if (!example.variantLabel) problems.push("tiene variantes y no dice cómo se llama el selector");
+  if (example.variants.length < 2) problems.push("declara variantes y tiene menos de dos");
+  const labels = example.variants.map(function (variant) { return variant.variantLabel; });
+  if (new Set(labels).size !== labels.length) problems.push("hay dos variantes con el mismo nombre");
+  return { example: example, variants: built, problems: problems };
+}
+
+const BUILT_EXAMPLES = EXAMPLES.map(buildExample);
+
+function totalsContext() {
+  const context = {};
+  BUILT_EXAMPLES.forEach(function (entry) {
+    entry.variants.forEach(function (built, index) {
+      const counters = built.states[built.states.length - 1].counters;
+      const suffixes = index === 0 ? ["_" + entry.example.number, "_" + entry.example.number + "_1"] : ["_" + entry.example.number + "_" + (index + 1)];
+      suffixes.forEach(function (suffix) {
+        context["fallos" + suffix] = counters.faults;
+        context["escrituras" + suffix] = counters.writes;
+        context["tlb" + suffix] = counters.tlb;
+        context["memoria" + suffix] = counters.memory;
+        context["disco" + suffix] = counters.disk;
+      });
+    });
+  });
+  return context;
+}
+
+const TOTALS = totalsContext();
+
+BUILT_EXAMPLES.forEach(function (entry) {
+  const example = entry.example;
+  const pieces = [{ where: "frase de cierre", text: fill(example.closing, TOTALS) }];
+  if (example.compare) {
+    example.compare.headers.forEach(function (text) { pieces.push({ where: "encabezado de la tabla", text: fill(text, TOTALS) }); });
+    example.compare.rows.forEach(function (row) {
+      row.forEach(function (text) { pieces.push({ where: "celda de la tabla", text: fill(text, TOTALS) }); });
+    });
+  }
+  verifyPieces(pieces, entry.problems);
+});
+
+(function verifyGroupsAreContiguous() {
+  const seen = [];
+  EXAMPLES.forEach(function (example) {
+    if (seen[seen.length - 1] === example.group) return;
+    if (seen.indexOf(example.group) !== -1) console.error("El grupo " + example.group + " aparece cortado en dos tramos de la escalera");
+    seen.push(example.group);
+  });
+  EXAMPLES.forEach(function (example) {
+    if (!UI_TEXT.groups[example.group]) console.error("El grupo " + example.group + " no tiene nombre");
+  });
+})();
+
+BUILT_EXAMPLES.forEach(function (built) {
+  built.problems.forEach(function (problem) {
+    console.error("Ejemplo " + built.example.number + ": " + problem);
+  });
+});
+
+Object.keys(TOOLTIPS).forEach(function (key) {
+  if (!USED_TIPS[key]) console.error("El globito " + key + " está escrito y ninguna narración lo invoca");
+});
+</script>
+
+<script id="ui">
+const dom = {
+  pageTitle: document.getElementById("pageTitle"),
+  exampleList: document.getElementById("exampleList"),
+  modeLabel: document.getElementById("modeLabel"),
+  modeBar: document.getElementById("modeBar"),
+  choiceRow: document.getElementById("choiceRow"),
+  choiceLabel: document.getElementById("choiceLabel"),
+  choiceBar: document.getElementById("choiceBar"),
+  narration: document.getElementById("narrationPanel"),
+  main: document.getElementById("main"),
+  title: document.getElementById("exampleTitle"),
+  subtitle: document.getElementById("exampleSubtitle"),
+  stepUnit: document.getElementById("stepUnit"),
+  progress: document.getElementById("progress"),
+  progressFill: document.getElementById("progressFill"),
+  first: document.getElementById("firstStep"),
+  prev: document.getElementById("prevStep"),
+  next: document.getElementById("nextStep"),
+  last: document.getElementById("lastStep"),
+  play: document.getElementById("playPause"),
+  restart: document.getElementById("restartExample"),
+  score: document.getElementById("score"),
+  tooltip: document.getElementById("tooltip")
+};
+
+const AUTOPLAY_DELAY = 2800;
+const STORE_KEY = "ssoo-recursos:page-replacement:v1";
+const TLB_OPTIONS = ["tlb", "table", "fault"];
+
+const PANELS = {
+  board: renderBoard,
+  tlbBoard: renderBoard,
+  state: renderState
+};
+
+const panelRefs = {};
+let canvasKey = "";
+
+const view = { exampleIndex: 0, variantIndex: 0, position: 0, mode: "solve", hints: true, playing: false, timer: null };
+
+function readStore() {
+  try {
+    const raw = window.localStorage.getItem(STORE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function writeStore() {
+  try {
+    window.localStorage.setItem(STORE_KEY, JSON.stringify(progress));
+  } catch (error) {
+    return;
+  }
+}
+
+const progress = readStore();
+
+function currentEntry() { return BUILT_EXAMPLES[view.exampleIndex]; }
+function currentBuilt() { return currentEntry().variants[view.variantIndex]; }
+function currentExample() { return currentBuilt().example; }
+
+function progressKey(exampleIndex, variantIndex) {
+  return BUILT_EXAMPLES[exampleIndex].example.number + ":" + variantIndex;
+}
+
+function validAnswers(built, saved) {
+  if (!saved || !Array.isArray(saved.answers) || saved.answers.length > built.executed) return false;
+  const allowed = built.example.algorithm === "tlb"
+    ? TLB_OPTIONS
+    : built.example.frames.map(function (label, index) { return String(index); }).concat(built.example.invalidOption ? ["invalid"] : []);
+  return saved.answers.every(function (answer) { return answer && allowed.indexOf(answer.given) !== -1; });
+}
+
+function storedAnswers(exampleIndex, variantIndex) {
+  const built = BUILT_EXAMPLES[exampleIndex].variants[variantIndex];
+  const saved = progress[progressKey(exampleIndex, variantIndex)];
+  return validAnswers(built, saved) ? saved.answers : [];
+}
+
+function answers() { return storedAnswers(view.exampleIndex, view.variantIndex); }
+function answeredCount() { return answers().length; }
+
+function liveReference() {
+  if (view.mode !== "solve") return null;
+  const count = answeredCount();
+  if (view.position !== count || count >= currentBuilt().executed) return null;
+  return count + 1;
+}
+
+function maxIndex() {
+  return view.mode === "watch" ? currentBuilt().executed : answeredCount();
+}
+
+function totalSteps() { return currentBuilt().executed + 1; }
+
+function exampleSolved(exampleIndex) {
+  return BUILT_EXAMPLES[exampleIndex].variants.every(function (built, variantIndex) {
+    return storedAnswers(exampleIndex, variantIndex).length === built.executed;
+  });
+}
+
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined && text !== null) node.textContent = text;
+  return node;
+}
+
+function renderRich(target, text) {
+  target.textContent = "";
+  const pattern = /\[\[(\w+):([^\]]+)\]\]|\*([^*]+)\*/g;
+  let cursor = 0;
+  let match = pattern.exec(text);
+  while (match) {
+    if (match.index > cursor) target.appendChild(document.createTextNode(text.slice(cursor, match.index)));
+    if (match[1]) {
+      const button = element("button", "tip", match[2]);
+      button.type = "button";
+      button.dataset.tip = match[1];
+      target.appendChild(button);
+    } else {
+      target.appendChild(element("strong", null, match[3]));
+    }
+    cursor = match.index + match[0].length;
+    match = pattern.exec(text);
+  }
+  if (cursor < text.length) target.appendChild(document.createTextNode(text.slice(cursor)));
+  return target;
+}
+
+function buildPanel(id) {
+  const refs = { body: element("div", "panel-body") };
+  const section = element("section", "panel " + id);
+  const heading = element("h2");
+  const title = element("button", "tip", UI_TEXT.panels[id]);
+  title.type = "button";
+  title.dataset.tip = "panel:" + id;
+  heading.appendChild(title);
+  refs.note = heading.appendChild(element("span", "panel-note"));
+  refs.tools = heading.appendChild(element("span", "tool-row"));
+  section.appendChild(heading);
+  section.appendChild(refs.body);
+  refs.section = section;
+  return refs;
+}
+
+function buildCanvas() {
+  const example = currentExample();
+  const canvas = example.canvas;
+  const key = example.number + "|" + view.variantIndex + "|" + canvas.columns + "|" + canvas.panels.join(",");
+  if (key === canvasKey) return;
+  canvasKey = key;
+  Object.keys(panelRefs).forEach(function (id) { delete panelRefs[id]; });
+  const fresh = element("main");
+  fresh.id = "main";
+  fresh.style.gridTemplateColumns = canvas.columns;
+  canvas.panels.forEach(function (id) {
+    const refs = buildPanel(id);
+    panelRefs[id] = refs;
+    fresh.appendChild(refs.section);
+  });
+  dom.main.replaceWith(fresh);
+  dom.main = fresh;
+}
+
+function renderExampleList() {
+  dom.exampleList.textContent = "";
+  let lastGroup = null;
+  let section = null;
+  BUILT_EXAMPLES.forEach(function (built, index) {
+    if (built.example.group !== lastGroup) {
+      section = element("span", "group");
+      section.appendChild(element("span", "group-cap", UI_TEXT.groups[built.example.group]));
+      dom.exampleList.appendChild(section);
+      lastGroup = built.example.group;
+    }
+    const button = element("button");
+    button.type = "button";
+    button.dataset.focus = "example:" + index;
+    button.appendChild(element("span", "num", built.example.number));
+    button.appendChild(element("span", "tick", UI_TEXT.solvedMark));
+    button.addEventListener("click", function () { selectExample(index); });
+    section.appendChild(button);
+  });
+}
+
+function updateExampleList() {
+  Array.prototype.forEach.call(dom.exampleList.querySelectorAll("button"), function (button, index) {
+    const example = BUILT_EXAMPLES[index].example;
+    const solved = exampleSolved(index);
+    button.setAttribute("aria-current", index === view.exampleIndex ? "true" : "false");
+    button.classList.toggle("solved", solved);
+    button.title = example.short + " · " + example.adds + (solved ? " · " + UI_TEXT.solvedTip : "");
+  });
+}
+
+function renderSwitch(container, entries, activeKey, onPick, focusPrefix) {
+  container.textContent = "";
+  entries.forEach(function (entry) {
+    const button = element("button", null, entry.label);
+    button.type = "button";
+    button.dataset.focus = focusPrefix + ":" + entry.key;
+    button.setAttribute("aria-pressed", entry.key === activeKey ? "true" : "false");
+    button.addEventListener("click", function () { onPick(entry.key); });
+    container.appendChild(button);
+  });
+}
+
+function renderModes() {
+  dom.modeLabel.textContent = UI_TEXT.modeLabel;
+  renderSwitch(dom.modeBar, [
+    { key: "solve", label: UI_TEXT.modes.solve },
+    { key: "watch", label: UI_TEXT.modes.watch }
+  ], view.mode, selectMode, "mode");
+}
+
+function renderHeaderChoices() {
+  const entry = currentEntry();
+  if (entry.variants.length < 2) { dom.choiceBar.textContent = ""; dom.choiceRow.hidden = true; return; }
+  dom.choiceRow.hidden = false;
+  dom.choiceLabel.textContent = entry.example.variantLabel;
+  renderSwitch(dom.choiceBar, entry.variants.map(function (built, index) {
+    return { key: String(index), label: built.label };
+  }), String(view.variantIndex), function (key) { selectVariant(Number(key)); }, "variant");
+}
+
+function bitsText(example, frame) {
+  const bits = example.bits || [];
+  if (bits.indexOf("u") !== -1 && bits.indexOf("m") !== -1) return fill(UI_TEXT.board.bitUM, { u: frame.u, m: frame.m });
+  if (bits.indexOf("u") !== -1) return fill(UI_TEXT.board.bitU, { u: frame.u });
+  if (bits.indexOf("m") !== -1) return fill(UI_TEXT.board.bitM, { m: frame.m });
+  return null;
+}
+
+function frameCellContent(cell, example, state, index) {
+  const frame = state.frames[index];
+  if (frame.page === null) {
+    cell.classList.add("empty");
+    if (isClock(example) && state.pointer === index) cell.appendChild(element("span", "ptr", UI_TEXT.board.pointer));
+    return;
+  }
+  if (isClock(example) && state.pointer === index) cell.appendChild(element("span", "ptr", UI_TEXT.board.pointer));
+  cell.appendChild(document.createTextNode(String(frame.page)));
+  const bits = bitsText(example, frame);
+  if (bits) cell.appendChild(element("span", "bits", bits));
+}
+
+function columnStatus(k) {
+  const built = currentBuilt();
+  if (k > built.executed) return "skipped";
+  if (k <= view.position) return "revealed";
+  if (k === liveReference()) return "live";
+  return "future";
+}
+
+function headerRow(label, className) {
+  const row = element("tr", className);
+  row.appendChild(element("th", "row-label", label));
+  return row;
+}
+
+function boardHead(table, example, built, hasInitial) {
+  const head = element("thead");
+  const indexRow = headerRow(UI_TEXT.board.indexRow);
+  const addressRow = headerRow(UI_TEXT.board.addressRow);
+  const pageRow = headerRow(UI_TEXT.board.pageRow);
+  indexRow.firstChild.setAttribute("scope", "row");
+  if (hasInitial) {
+    indexRow.appendChild(element("th", "initial-head", UI_TEXT.board.initialColumn));
+    addressRow.appendChild(element("th"));
+    pageRow.appendChild(element("th"));
+  }
+  built.references.forEach(function (reference, position) {
+    const k = position + 1;
+    const status = columnStatus(k);
+    const extra = (k === view.position ? " current" : "") + (status === "skipped" ? " skipped" : "") + (status === "live" ? " live" : "");
+    const index = element("th", "col-index col-head" + extra, String(k));
+    index.setAttribute("scope", "col");
+    if (status === "skipped") index.title = UI_TEXT.board.skippedTitle;
+    indexRow.appendChild(index);
+    if (reference.address !== undefined) {
+      addressRow.appendChild(element("th", "col-address col-head" + extra, fill(UI_TEXT.board.address, { address: reference.address, mode: UI_TEXT.board.modeShort[reference.mode] })));
+    }
+    pageRow.appendChild(element("th", "col-page col-head" + extra, String(reference.page)));
+  });
+  head.appendChild(indexRow);
+  if (built.references[0].address !== undefined) head.appendChild(addressRow);
+  head.appendChild(pageRow);
+  table.appendChild(head);
+}
+
+function pickButton(example, built, k, index) {
+  const state = built.states[k - 1];
+  const frame = state.frames[index];
+  const reference = built.references[k - 1];
+  const button = element("button", "pick");
+  button.type = "button";
+  button.dataset.focus = "pick:" + index;
+  button.setAttribute("aria-label", fill(UI_TEXT.board.pickLabel, { frame: example.frames[index], page: reference.page }));
+  const then = element("span", "then");
+  if (frame.page !== null) then.textContent = (isClock(example) && state.pointer === index ? UI_TEXT.board.pointer + " " : "") + frame.page;
+  else if (isClock(example) && state.pointer === index) then.textContent = UI_TEXT.board.pointer;
+  button.appendChild(then);
+  button.appendChild(element("span", "ghost", String(reference.page)));
+  const bits = frame.page !== null ? bitsText(example, frame) : null;
+  if (bits) button.appendChild(element("span", "bits", bits));
+  button.addEventListener("click", function () { answer(String(index)); });
+  return button;
+}
+
+function frameRows(body, example, built, hasInitial) {
+  example.frames.forEach(function (label, index) {
+    const row = headerRow(fill(UI_TEXT.board.frameRow, { frame: label }));
+    row.firstChild.classList.add("frame");
+    row.firstChild.setAttribute("scope", "row");
+    if (hasInitial) {
+      const cell = element("td", "cell initial");
+      frameCellContent(cell, example, built.states[0], index);
+      row.appendChild(cell);
+    }
+    built.references.forEach(function (reference, position) {
+      const k = position + 1;
+      const status = columnStatus(k);
+      const cell = element("td", "cell");
+      if (status === "revealed") {
+        frameCellContent(cell, example, built.states[k], index);
+        const record = built.records[k - 1];
+        if (k === view.position && record.frame === index) cell.classList.add("fresh");
+      } else if (status === "live" && example.algorithm !== "tlb") {
+        cell.classList.add("live");
+        cell.appendChild(pickButton(example, built, k, index));
+      } else if (status === "skipped") {
+        cell.classList.add("skipped");
+        cell.textContent = UI_TEXT.board.skippedMark;
+      } else {
+        cell.classList.add("future");
+      }
+      row.appendChild(cell);
+    });
+    body.appendChild(row);
+  });
+}
+
+function tlbRows(body, example, built) {
+  for (let slot = 0; slot < example.tlbSize; slot += 1) {
+    const row = headerRow(fill(UI_TEXT.board.tlbRow, { slot: slot + 1 }), slot === 0 ? "split" : null);
+    row.firstChild.classList.add("frame");
+    row.firstChild.setAttribute("scope", "row");
+    built.references.forEach(function (reference, position) {
+      const k = position + 1;
+      const status = columnStatus(k);
+      const cell = element("td", "cell");
+      if (status === "revealed") {
+        const entry = built.states[k].tlb[slot];
+        if (entry === null) cell.classList.add("empty");
+        else cell.textContent = String(entry.page);
+        if (k === view.position && built.records[k - 1].slot === slot) cell.classList.add("fresh");
+      } else {
+        cell.classList.add("future");
+      }
+      row.appendChild(cell);
+    });
+    body.appendChild(row);
+  }
+}
+
+function markRow(body, label, built, hasInitial, valueFor, className) {
+  const row = headerRow(label, className);
+  row.firstChild.setAttribute("scope", "row");
+  if (hasInitial) row.appendChild(element("td"));
+  built.references.forEach(function (reference, position) {
+    const k = position + 1;
+    const cell = element("td", "mark-cell");
+    if (columnStatus(k) === "revealed") {
+      const value = valueFor(built.records[k - 1], k);
+      if (value) {
+        cell.textContent = value.text;
+        if (value.className) value.className.split(" ").forEach(function (name) { cell.classList.add(name); });
+      }
+    }
+    row.appendChild(cell);
+  });
+  body.appendChild(row);
+}
+
+function markRows(body, example, built, hasInitial) {
+  const board = UI_TEXT.board;
+  if (example.algorithm === "tlb") {
+    markRow(body, board.resultRow, built, false, function (record) {
+      return { text: board.results[record.kind], className: record.kind === "fault" ? "fault" : null };
+    }, "split");
+  } else {
+    markRow(body, board.faultRow, built, hasInitial, function (record) {
+      if (record.kind === "invalid") return { text: board.invalidMark, className: "fault small" };
+      return FAULT_KINDS[record.kind] ? { text: board.faultMark, className: "fault" } : null;
+    }, "split");
+    markRow(body, board.victimRow, built, hasInitial, function (record) {
+      return record.victim !== undefined ? { text: String(record.victim) } : null;
+    });
+    if (example.bits && example.bits.indexOf("m") !== -1) {
+      markRow(body, board.diskRow, built, hasInitial, function (record) {
+        return record.written ? { text: String(record.victim) } : null;
+      });
+    }
+  }
+  if (view.mode === "solve") {
+    const given = answers();
+    markRow(body, board.youRow, built, hasInitial && example.algorithm !== "tlb", function (record, k) {
+      const mine = given[k - 1];
+      if (!mine) return null;
+      return mine.given === built.answers[k - 1] ? { text: board.right, className: "right" } : { text: board.wrong, className: "wrong" };
+    });
+  }
+}
+
+function legendItems(example) {
+  const legend = UI_TEXT.board.legend;
+  if (example.algorithm === "tlb") {
+    return [
+      Object.assign({}, legend.tlb, { text: fill(legend.tlb.text, example.costs.tlb) }),
+      Object.assign({}, legend.table, { text: fill(legend.table.text, example.costs.table) }),
+      Object.assign({ fault: true }, legend.tlbFault, { text: fill(legend.tlbFault.text, example.costs.fault) }),
+      Object.assign({ ring: true }, legend.current)
+    ];
+  }
+  const items = [Object.assign({ fault: true }, legend.fault), legend.victim];
+  const bits = example.bits || [];
+  if (isClock(example)) items.push(legend.pointer);
+  if (bits.indexOf("u") !== -1) items.push(legend.u);
+  if (bits.indexOf("m") !== -1) items.push(legend.m, legend.disk);
+  if (example.references[0] && example.references[0].mode) items.push(legend.modes);
+  items.push(Object.assign({ ring: true }, legend.current));
+  return items;
+}
+
+function renderLegend(container, example) {
+  const legend = element("div", "legend");
+  legendItems(example).forEach(function (item) {
+    const node = element("span", "item");
+    if (item.ring) node.appendChild(element("span", "ring"));
+    else node.appendChild(element("span", "token" + (item.fault ? " fault" : ""), item.token));
+    node.appendChild(document.createTextNode(item.text));
+    legend.appendChild(node);
+  });
+  container.appendChild(legend);
+}
+
+function renderBoardTools(refs, example) {
+  refs.tools.textContent = "";
+  const live = liveReference();
+  const wantsTools = live && (example.algorithm === "tlb" || example.invalidOption);
+  refs.tools.hidden = !wantsTools;
+  if (!wantsTools) return;
+  refs.tools.appendChild(element("span", "toggle-label", UI_TEXT.answerLabel));
+  const options = example.algorithm === "tlb" ? TLB_OPTIONS : ["invalid"];
+  options.forEach(function (key, position) {
+    const button = element("button", "answer");
+    button.type = "button";
+    button.dataset.focus = "answer:" + key;
+    if (example.algorithm === "tlb") button.appendChild(element("span", "key", String(position + 1)));
+    button.appendChild(document.createTextNode(UI_TEXT.answers[key]));
+    button.addEventListener("click", function () { answer(key); });
+    refs.tools.appendChild(button);
+  });
+}
+
+function renderBoard() {
+  const example = currentExample();
+  const built = currentBuilt();
+  const id = example.canvas.panels[0];
+  const refs = panelRefs[id];
+  refs.note.textContent = "";
+  renderBoardTools(refs, example);
+  refs.body.textContent = "";
+  refs.body.classList.add("board-body");
+  const hasInitial = Boolean(example.initial);
+  const scroll = element("div", "board-scroll");
+  const table = element("table", "grid" + (example.algorithm === "tlb" ? " compact" : ""));
+  boardHead(table, example, built, hasInitial);
+  const body = element("tbody");
+  frameRows(body, example, built, hasInitial);
+  if (example.algorithm === "tlb") tlbRows(body, example, built);
+  markRows(body, example, built, hasInitial);
+  table.appendChild(body);
+  scroll.appendChild(table);
+  refs.body.appendChild(scroll);
+  renderLegend(refs.body, example);
+}
+
+function hintsShown(example) {
+  return view.mode === "watch" || view.hints || !example.hints;
+}
+
+function counterBlock(caption, value, fresh) {
+  const box = element("span", "counter" + (fresh ? " fresh" : ""));
+  box.appendChild(element("span", "caption", caption));
+  box.appendChild(element("span", "value", String(value)));
+  return box;
+}
+
+function renderCounters(container, example, state, before) {
+  const row = element("div", "counters");
+  const labels = UI_TEXT.state;
+  const changed = function (key) { return before !== null && state.counters[key] !== before.counters[key]; };
+  row.appendChild(counterBlock(labels.faults, state.counters.faults, changed("faults")));
+  if (example.bits && example.bits.indexOf("m") !== -1) row.appendChild(counterBlock(labels.writes, state.counters.writes, changed("writes")));
+  if (example.algorithm === "tlb") {
+    const box = element("span", "counter");
+    box.appendChild(element("span", "caption", labels.accessesTitle));
+    ["tlb", "memory", "disk"].forEach(function (key) {
+      const pair = element("span", "pair" + (changed(key) ? " fresh" : ""));
+      pair.appendChild(element("span", "caption", labels.accesses[key]));
+      pair.appendChild(element("span", "value", String(state.counters[key])));
+      box.appendChild(pair);
+    });
+    row.appendChild(box);
+  }
+  container.appendChild(row);
+}
+
+function frameInfo(example, built, state, frame) {
+  const labels = UI_TEXT.state;
+  const parts = [];
+  if (frame.page === null) return parts;
+  const bits = example.bits || [];
+  if (example.algorithm === "fifo") parts.push(fill(labels.since, { n: frame.since }));
+  if (example.algorithm === "optimal") {
+    const at = nextUseOf(built.references, frame.page, view.position);
+    parts.push(at === null ? labels.nextNever : fill(labels.nextAt, { n: at }));
+  }
+  if (example.algorithm === "lru" || example.algorithm === "tlb") parts.push(frame.lastText);
+  if (bits.indexOf("u") !== -1) parts.push(fill(labels.bitU, { u: frame.u }));
+  if (bits.indexOf("m") !== -1) parts.push(fill(labels.bitM, { m: frame.m }));
+  return parts;
+}
+
+function renderFrameList(container, example, built, state, before) {
+  const labels = UI_TEXT.state;
+  const shown = hintsShown(example);
+  container.appendChild(element("div", "sub-title", labels.framesTitle));
+  const list = element("div", "frame-list");
+  state.frames.forEach(function (frame, index) {
+    const row = element("div", "frame-row");
+    row.appendChild(element("span", "who", fill(UI_TEXT.board.frameRow, { frame: frame.label })));
+    const page = element("span", "page" + (frame.page === null ? " free" : ""), frame.page === null ? labels.free : String(frame.page));
+    if (before && before.frames[index].page !== frame.page) page.classList.add("fresh");
+    row.appendChild(page);
+    const info = element("span", "info");
+    const persistent = example.bits && !example.hints;
+    if (shown || persistent) frameInfo(example, built, state, frame).forEach(function (text) { info.appendChild(element("span", null, text)); });
+    if (isClock(example) && state.pointer === index) info.appendChild(element("span", "ptr-tag", labels.pointerTag));
+    row.appendChild(info);
+    list.appendChild(row);
+  });
+  container.appendChild(list);
+}
+
+function orderBlock(title, items, freshPage) {
+  const labels = UI_TEXT.state;
+  const block = element("div");
+  block.appendChild(element("div", "sub-title", title));
+  const line = element("div", "order");
+  if (items.length === 0) line.appendChild(element("span", "empty", labels.emptyOrder));
+  items.forEach(function (item, index) {
+    if (index > 0) line.appendChild(element("span", "arrow", labels.orderArrow));
+    const chip = element("span", "chip" + (item.page === freshPage ? " fresh" : ""));
+    chip.title = item.title;
+    chip.appendChild(element("span", "value", String(item.page)));
+    chip.appendChild(element("span", "caption", item.caption));
+    line.appendChild(chip);
+  });
+  block.appendChild(line);
+  return block;
+}
+
+function renderOrders(container, built, state) {
+  const labels = UI_TEXT.state;
+  if (!hintsShown(built.example)) return;
+  const record = view.position > 0 ? built.records[view.position - 1] : null;
+  const usedPage = record ? record.page : null;
+  const insertedPage = record && record.kind !== "tlb" ? record.page : null;
+  const frames = state.frames.filter(function (frame) { return frame.page !== null; })
+    .sort(function (one, two) { return one.order - two.order; })
+    .map(function (frame) { return { page: frame.page, caption: fill(labels.lruChip, { n: frame.order - REFERENCE_ORDER_BASE }), title: frame.lastText }; });
+  const entries = state.tlb.filter(function (entry) { return entry !== null; })
+    .sort(function (one, two) { return one.since - two.since; })
+    .map(function (entry) { return { page: entry.page, caption: fill(labels.fifoChip, { n: entry.since }), title: fill(labels.since, { n: entry.since }) }; });
+  container.appendChild(orderBlock(labels.lruOrderTitle, frames, usedPage));
+  container.appendChild(orderBlock(labels.fifoOrderTitle, entries, insertedPage));
+}
+
+function renderHintsToggle(refs, example) {
+  refs.tools.textContent = "";
+  const optional = view.mode === "solve" && example.hints;
+  refs.tools.hidden = !optional;
+  if (!optional) return;
+  refs.tools.appendChild(element("span", "toggle-label", UI_TEXT.hintsLabel));
+  const bar = element("span", "switch");
+  bar.setAttribute("role", "group");
+  bar.setAttribute("aria-label", UI_TEXT.hintsLabel);
+  renderSwitch(bar, [
+    { key: "show", label: UI_TEXT.hints.show },
+    { key: "hide", label: UI_TEXT.hints.hide }
+  ], view.hints ? "show" : "hide", function (key) {
+    view.hints = key === "show";
+    render();
+  }, "hints");
+  refs.tools.appendChild(bar);
+}
+
+function renderState() {
+  const example = currentExample();
+  const built = currentBuilt();
+  const refs = panelRefs.state;
+  const state = built.states[view.position];
+  const before = view.position > 0 ? built.states[view.position - 1] : null;
+  refs.note.textContent = "";
+  renderHintsToggle(refs, example);
+  refs.body.textContent = "";
+  refs.body.classList.add("state-body");
+  const when = refs.body.appendChild(element("p", "when"));
+  when.appendChild(element("span", null, view.position === 0 ? UI_TEXT.state.initialNote : fill(UI_TEXT.state.afterNote, { n: view.position })));
+  if (state.terminated) when.appendChild(element("span", "ended", UI_TEXT.state.ended));
+  renderCounters(refs.body, example, state, before);
+  if (example.algorithm === "tlb") renderOrders(refs.body, built, state);
+  else {
+    const frames = element("div");
+    renderFrameList(frames, example, built, state, before);
+    refs.body.appendChild(frames);
+  }
+  if (!hintsShown(example)) refs.body.appendChild(element("p", "hidden-note", UI_TEXT.state.hiddenNote));
+}
+
+function takeawayBlock(text) {
+  const box = element("div", "takeaway");
+  box.appendChild(element("span", "tag", UI_TEXT.takeawayTag));
+  renderRich(box.appendChild(element("span", "line")), text);
+  return box;
+}
+
+function compareBlock(compare) {
+  const wrapper = element("div", "compare full");
+  const table = element("table");
+  const head = element("tr");
+  compare.headers.forEach(function (text) { renderRich(head.appendChild(element("th")), fill(text, TOTALS)); });
+  table.appendChild(head);
+  compare.rows.forEach(function (cells) {
+    const row = element("tr");
+    cells.forEach(function (text, column) {
+      renderRich(row.appendChild(element("td", column === 0 ? "label" : null)), fill(text, TOTALS));
+    });
+    table.appendChild(row);
+  });
+  wrapper.appendChild(table);
+  return wrapper;
+}
+
+function verdictFor(record, given, example) {
+  const feedback = UI_TEXT.feedback;
+  const correct = correctAnswer(record, example);
+  if (given === correct) return { right: true, text: feedback.right };
+  if (example.algorithm === "tlb") return { right: false, text: fill(feedback.wrongTlb, { given: UI_TEXT.answers[given], correct: UI_TEXT.answers[correct] }) };
+  if (given === "invalid") return { right: false, text: feedback.wrongInvalid };
+  if (correct === "invalid") return { right: false, text: feedback.wrongFrameOnInvalid };
+  return { right: false, text: fill(feedback.wrongFrame, { given: example.frames[Number(given)] }) };
+}
+
+function promptFor(example, built, n) {
+  const feedback = UI_TEXT.feedback;
+  const reference = built.references[n - 1];
+  if (example.algorithm === "tlb") return fill(feedback.promptTlb, { n: n, page: reference.page });
+  if (reference.address !== undefined) {
+    return fill(feedback.promptAddress, { n: n, address: reference.address, modeName: UI_TEXT.narr.modeName[reference.mode], invalid: UI_TEXT.answers.invalid, count: example.frames.length });
+  }
+  return fill(feedback.prompt, { n: n, page: reference.page, count: example.frames.length });
+}
+
+function narrationMain(example, built) {
+  const main = element("div", "narration-main");
+  const position = view.position;
+  if (position === 0) {
+    renderRich(main.appendChild(element("p", "narration-text")), example.intro);
+  } else {
+    const paragraph = main.appendChild(element("p", "narration-text"));
+    if (view.mode === "solve") {
+      const mine = answers()[position - 1];
+      if (mine) {
+        const verdict = verdictFor(built.records[position - 1], mine.given, example);
+        paragraph.appendChild(element("span", verdict.right ? "verdict-right" : "verdict-wrong", verdict.text));
+        paragraph.appendChild(document.createTextNode(" "));
+      }
+    }
+    paragraph.appendChild(renderRich(element("span"), built.narrations[position - 1]));
+    const note = (example.notes || {})[position];
+    if (note) renderRich(main.appendChild(element("p", "narration-note")), note);
+  }
+  const live = liveReference();
+  if (live) renderRich(main.appendChild(element("p", "narration-prompt")), promptFor(example, built, live));
+  return main;
+}
+
+function renderNarration() {
+  const example = currentExample();
+  const built = currentBuilt();
+  const final = view.position === built.executed;
+  dom.narration.textContent = "";
+  dom.narration.classList.toggle("with-extras", final);
+  dom.narration.classList.toggle("no-compare", final && !example.compare);
+  dom.narration.appendChild(narrationMain(example, built));
+  if (!final) return;
+  if (example.compare) dom.narration.appendChild(compareBlock(example.compare));
+  const extras = element("div", "narration-extras");
+  extras.appendChild(takeawayBlock(fill(example.closing, TOTALS)));
+  dom.narration.appendChild(extras);
+}
+
+function renderControls() {
+  const total = totalSteps();
+  const limit = maxIndex();
+  dom.progress.textContent = fill(UI_TEXT.progress, { current: view.position + 1, total: total });
+  dom.progressFill.style.transform = "scaleX(" + ((view.position + 1) / total) + ")";
+  dom.first.disabled = view.position === 0;
+  dom.prev.disabled = view.position === 0;
+  dom.next.disabled = view.position >= limit;
+  dom.last.disabled = view.position >= limit;
+  dom.play.hidden = view.mode !== "watch";
+  dom.play.textContent = view.playing ? UI_TEXT.pause : UI_TEXT.play;
+  dom.restart.hidden = view.mode !== "solve";
+  dom.restart.disabled = answeredCount() === 0;
+  const given = answers();
+  const right = given.filter(function (mine, index) { return mine.given === currentBuilt().answers[index]; }).length;
+  dom.score.textContent = view.mode === "solve" && given.length > 0 ? fill(UI_TEXT.score, { ok: right, total: given.length }) : "";
+}
+
+function keepFocus(step) {
+  const before = document.activeElement;
+  const key = before && before.dataset ? before.dataset.focus : null;
+  step();
+  if (!key) return;
+  const back = document.querySelector('[data-focus="' + key + '"]');
+  if (back) back.focus();
+}
+
+function renderAll() {
+  const example = currentExample();
+  buildCanvas();
+  dom.title.textContent = example.number + ". " + example.title;
+  dom.subtitle.textContent = example.subtitle;
+  dom.stepUnit.textContent = example.stepUnit;
+  renderModes();
+  renderHeaderChoices();
+  updateExampleList();
+  example.canvas.panels.forEach(function (id) { PANELS[id](); });
+  renderNarration();
+  renderControls();
+}
+
+function render() {
+  keepFocus(renderAll);
+}
+
+function goTo(index) {
+  view.position = Math.max(0, Math.min(index, maxIndex()));
+  render();
+  if (view.playing && view.position >= maxIndex()) stopPlaying();
+}
+
+function answer(given) {
+  const live = liveReference();
+  if (!live) return;
+  const key = progressKey(view.exampleIndex, view.variantIndex);
+  const list = answers().slice();
+  list.push({ given: given });
+  progress[key] = { answers: list };
+  writeStore();
+  view.position = list.length;
+  render();
+}
+
+function restartExample() {
+  stopPlaying();
+  delete progress[progressKey(view.exampleIndex, view.variantIndex)];
+  writeStore();
+  view.position = 0;
+  render();
+}
+
+function entryPosition() {
+  return view.mode === "solve" ? answeredCount() : 0;
+}
+
+function selectExample(index) {
+  stopPlaying();
+  view.exampleIndex = index;
+  view.variantIndex = 0;
+  view.position = entryPosition();
+  render();
+}
+
+function selectVariant(index) {
+  if (index === view.variantIndex) return;
+  stopPlaying();
+  view.variantIndex = index;
+  view.position = entryPosition();
+  render();
+}
+
+function selectMode(mode) {
+  if (mode === view.mode) return;
+  stopPlaying();
+  view.mode = mode;
+  view.position = mode === "solve" ? answeredCount() : Math.min(view.position, currentBuilt().executed);
+  render();
+}
+
+function stopPlaying() {
+  view.playing = false;
+  if (view.timer) { clearTimeout(view.timer); view.timer = null; }
+  dom.play.textContent = UI_TEXT.play;
+}
+
+function scheduleTick() {
+  if (view.timer) clearTimeout(view.timer);
+  view.timer = setTimeout(function () {
+    if (!view.playing) return;
+    if (view.position >= maxIndex()) { stopPlaying(); render(); return; }
+    goTo(view.position + 1);
+    if (view.playing) scheduleTick();
+  }, AUTOPLAY_DELAY);
+}
+
+function togglePlaying() {
+  if (view.playing) { stopPlaying(); render(); return; }
+  if (view.position >= maxIndex()) view.position = 0;
+  view.playing = true;
+  scheduleTick();
+  render();
+}
+
+function lookupTooltip(key) {
+  if (key.indexOf("panel:") === 0) return PANEL_TIPS[key.slice(6)];
+  return TOOLTIPS[key];
+}
+
+function showTooltip(trigger, tip) {
+  dom.tooltip.textContent = "";
+  dom.tooltip.appendChild(element("strong", "tip-title", tip.title));
+  dom.tooltip.appendChild(document.createTextNode(tip.body));
+  dom.tooltip.classList.add("open");
+  const box = trigger.getBoundingClientRect();
+  const width = dom.tooltip.offsetWidth;
+  const height = dom.tooltip.offsetHeight;
+  let left = box.left + box.width / 2 - width / 2;
+  left = Math.min(left, window.innerWidth - width - 8);
+  let top = box.top - height - 8;
+  if (top < 8) top = box.bottom + 8;
+  dom.tooltip.style.left = Math.max(8, left) + "px";
+  dom.tooltip.style.top = top + "px";
+}
+
+function hideTooltip() { dom.tooltip.classList.remove("open"); }
+
+function closestElement(target, selector) {
+  return target && typeof target.closest === "function" ? target.closest(selector) : null;
+}
+
+["mouseover", "focusin"].forEach(function (name) {
+  document.addEventListener(name, function (event) {
+    const trigger = closestElement(event.target, "[data-tip]");
+    const tip = trigger ? lookupTooltip(trigger.dataset.tip) : null;
+    if (tip) showTooltip(trigger, tip);
+    else hideTooltip();
+  });
+});
+
+["mouseout", "focusout", "scroll"].forEach(function (name) {
+  document.addEventListener(name, hideTooltip, true);
+});
+
+dom.first.addEventListener("click", function () { stopPlaying(); goTo(0); });
+dom.prev.addEventListener("click", function () { stopPlaying(); goTo(view.position - 1); });
+dom.next.addEventListener("click", function () { stopPlaying(); goTo(view.position + 1); });
+dom.last.addEventListener("click", function () { stopPlaying(); goTo(maxIndex()); });
+dom.play.addEventListener("click", togglePlaying);
+dom.restart.addEventListener("click", restartExample);
+
+function answerByKey(key) {
+  const example = currentExample();
+  const digit = Number(key);
+  if (!liveReference() || !(digit >= 1)) return false;
+  if (example.algorithm === "tlb") {
+    if (digit > TLB_OPTIONS.length) return false;
+    answer(TLB_OPTIONS[digit - 1]);
+    return true;
+  }
+  if (digit > example.frames.length) return false;
+  answer(String(digit - 1));
+  return true;
+}
+
+document.addEventListener("keydown", function (event) {
+  if (event.target && event.target.tagName === "BUTTON" && (event.key === " " || event.key === "Enter")) return;
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.key === "ArrowRight") { stopPlaying(); goTo(view.position + 1); event.preventDefault(); }
+  if (event.key === "ArrowLeft") { stopPlaying(); goTo(view.position - 1); event.preventDefault(); }
+  if (event.key === "Home") { stopPlaying(); goTo(0); event.preventDefault(); }
+  if (event.key === "End") { stopPlaying(); goTo(maxIndex()); event.preventDefault(); }
+  if (event.key === "Escape") hideTooltip();
+  if (/^[1-9]$/.test(event.key) && answerByKey(event.key)) event.preventDefault();
+});
+
+dom.pageTitle.textContent = UI_TEXT.pageTitle;
+dom.first.textContent = UI_TEXT.firstStep;
+dom.prev.textContent = UI_TEXT.prevStep;
+dom.next.textContent = UI_TEXT.nextStep;
+dom.last.textContent = UI_TEXT.lastStep;
+dom.play.textContent = UI_TEXT.play;
+dom.restart.textContent = UI_TEXT.restart;
+
+Object.keys(UI_TEXT.panels).forEach(function (id) {
+  if (!PANELS[id]) console.error("El panel " + id + " tiene nombre pero no tiene dibujo");
+});
+
+Object.keys(PANELS).forEach(function (id) {
+  if (!UI_TEXT.panels[id]) console.error("El panel " + id + " tiene dibujo pero no tiene nombre");
+});
+
+renderExampleList();
+view.position = entryPosition();
+render();
+</script>
+</body>
+</html>
